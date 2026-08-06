@@ -6,7 +6,10 @@ INITRD_DIR=/build/initramfs
 OUT=/build/initrd.img
 
 echo "==> Building initramfs..."
-mkdir -p "$INITRD_DIR"/{bin,sbin,lib,lib/modules,proc,sys,dev,mnt/{iso,squash,root,overlay}}
+mkdir -p "$INITRD_DIR/bin" "$INITRD_DIR/sbin" "$INITRD_DIR/lib" \
+         "$INITRD_DIR/lib/modules" "$INITRD_DIR/proc" "$INITRD_DIR/sys" \
+         "$INITRD_DIR/dev" "$INITRD_DIR/mnt/iso" "$INITRD_DIR/mnt/squash" \
+         "$INITRD_DIR/mnt/root" "$INITRD_DIR/mnt/overlay"
 
 # Copy busybox and create symlinks
 cp /bin/busybox "$INITRD_DIR/bin/"
