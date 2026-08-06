@@ -14,7 +14,6 @@ RUN apk add --no-cache \
     grub \
     grub-bios \
     grub-efi \
-    grub-efi-bins \
     mtools \
     dosfstools \
     cpio \
