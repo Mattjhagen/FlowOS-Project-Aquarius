@@ -122,7 +122,11 @@ chroot "$ROOTFS" sh -c "
     rc-update add dbus boot 2>/dev/null || true
     rc-update add docker default 2>/dev/null || true
     rc-update add cgroups sysinit 2>/dev/null || true
+    rc-update add sshd default 2>/dev/null || true
 "
+
+# Pre-generate SSH host keys so sshd starts instantly on first boot
+chroot "$ROOTFS" ssh-keygen -A 2>/dev/null || true
 
 # Set hostname
 echo "flowos" > "$ROOTFS/etc/hostname"
