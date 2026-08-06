@@ -7,12 +7,15 @@ ROOTFS=/build/rootfs
 echo "==> Creating Alpine rootfs..."
 mkdir -p "$ROOTFS"
 
-# Enable community + edge repos for docker, nodejs, xclip, etc.
-mkdir -p "$ROOTFS/etc/apk"
+# Enable community repo for docker, nodejs, xclip, etc.
+mkdir -p "$ROOTFS/etc/apk/keys"
 cat > "$ROOTFS/etc/apk/repositories" <<'REPOS'
 https://dl-cdn.alpinelinux.org/alpine/v3.21/main
 https://dl-cdn.alpinelinux.org/alpine/v3.21/community
 REPOS
+
+# Copy host APK signing keys into the new rootfs so packages can be verified
+cp /etc/apk/keys/* "$ROOTFS/etc/apk/keys/"
 
 # Bootstrap Alpine into rootfs
 apk add --no-cache --root "$ROOTFS" --initdb \
