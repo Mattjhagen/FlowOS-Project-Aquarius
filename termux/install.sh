@@ -5,9 +5,13 @@
 set -e
 
 FLOWOS_DIR="$HOME/.flowos"
-BIN="$PREFIX/bin/flowos"
+BIN="${PREFIX:-/data/data/com.termux/files/usr}/bin/flowos"
 KEYFILE="$HOME/.flowos/api_key"
 REPO="https://raw.githubusercontent.com/Mattjhagen/FlowOS-Project-Aquarius/main"
+
+# Ensure dirs exist before anything else
+mkdir -p "$FLOWOS_DIR/plugins"
+mkdir -p "$(dirname "$BIN")"
 
 # ── Colors ──────────────────────────────────────────────────────
 CY='\033[38;5;45m'
@@ -134,7 +138,7 @@ if [ -z "$ANTHROPIC_API_KEY" ]; then
     fi
 fi
 
-exec python "$FLOWOS_DIR/flowos.py" "$@"
+exec python3 "$FLOWOS_DIR/flowos.py" "$@"
 LAUNCHER
 
 chmod +x "$BIN"
