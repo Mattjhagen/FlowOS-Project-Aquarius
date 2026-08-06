@@ -71,16 +71,17 @@ echo "==> Building ISO with xorriso..."
 xorriso -as mkisofs \
     -iso-level 3 \
     -full-iso9660-filenames \
-    -volid "FLOWOS_$(date +%Y%m%d)" \
+    -volid "FLOWOS" \
     -eltorito-boot boot/grub/core.img \
     -no-emul-boot \
     -boot-load-size 4 \
     -boot-info-table \
     --grub2-boot-info \
     --grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
-    --efi-boot boot/grub/efi.img \
-    -efi-boot-part --efi-startup-partition-type 0xef \
-    -append_partition 2 0xef "$ISO_ROOT/boot/grub/efi.img" \
+    -eltorito-alt-boot \
+    -e boot/grub/efi.img \
+    -no-emul-boot \
+    -isohybrid-gpt-basdat \
     -output "$OUT" \
     "$ISO_ROOT"
 
