@@ -3,7 +3,7 @@
 set -e
 
 ISO_ROOT=/build/iso
-OUT=/output/flowos.iso
+OUT=/build/flowos.iso
 
 echo "==> Assembling ISO structure..."
 mkdir -p "$ISO_ROOT/boot/grub" "$ISO_ROOT/flowos" "$ISO_ROOT/EFI/BOOT"

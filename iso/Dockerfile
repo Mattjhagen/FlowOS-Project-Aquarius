@@ -44,4 +44,4 @@ RUN sh /src/iso/scripts/build-initramfs.sh
 RUN sh /src/iso/scripts/create-iso.sh
 
 # Default command: copy ISO to output mount
-CMD ["sh", "-c", "cp /output/flowos.iso /output/ && echo 'ISO ready at /output/flowos.iso'"]
+CMD ["sh", "-c", "cp /build/flowos.iso /output/flowos.iso && echo 'ISO ready at dist/flowos.iso'"]
