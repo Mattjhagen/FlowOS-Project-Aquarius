@@ -1,0 +1,62 @@
+#!/bin/sh
+# FlowOS initramfs init — mounts squashfs rootfs from ISO with tmpfs overlay
+
+rescue_shell() {
+    echo ":: Dropping to rescue shell"
+    exec /bin/sh
+}
+
+echo ":: FlowOS booting..."
+
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t devtmpfs none /dev 2>/dev/null || mdev -s
+
+# Load essential modules
+for mod in squashfs overlay loop iso9660 sr_mod cdrom; do
+    modprobe $mod 2>/dev/null
+done
+
+mkdir -p /mnt/iso /mnt/squash /mnt/root /mnt/overlay/upper /mnt/overlay/work
+
+# Find the ISO (CD-ROM or USB)
+echo ":: Scanning for FlowOS media..."
+found=""
+for try in 1 2 3 4 5; do
+    for dev in /dev/sr0 /dev/sr1 /dev/sda /dev/sda1 /dev/sdb /dev/sdb1 /dev/sdc /dev/sdc1; do
+        [ -b "$dev" ] || continue
+        if mount -t iso9660 -o ro "$dev" /mnt/iso 2>/dev/null; then
+            if [ -f /mnt/iso/flowos/rootfs.squashfs ]; then
+                found="$dev"
+                break 2
+            fi
+            umount /mnt/iso 2>/dev/null
+        fi
+    done
+    echo ":: Waiting for devices... ($try/5)"
+    sleep 1
+done
+
+[ -z "$found" ] && rescue_shell
+
+echo ":: Found FlowOS on $found"
+
+# Mount squashfs read-only
+mount -t squashfs -o loop,ro /mnt/iso/flowos/rootfs.squashfs /mnt/squash \
+    || rescue_shell
+
+# OverlayFS — tmpfs upper layer makes the system writable in RAM
+mount -t tmpfs tmpfs /mnt/overlay
+mkdir -p /mnt/overlay/upper /mnt/overlay/work
+mount -t overlay overlay \
+    -o lowerdir=/mnt/squash,upperdir=/mnt/overlay/upper,workdir=/mnt/overlay/work \
+    /mnt/root || rescue_shell
+
+# Mount proc/sys/dev in new root
+mkdir -p /mnt/root/{proc,sys,dev,run}
+mount --bind /proc /mnt/root/proc
+mount --bind /sys /mnt/root/sys
+mount --bind /dev /mnt/root/dev
+
+echo ":: Switching root..."
+exec switch_root /mnt/root /sbin/init

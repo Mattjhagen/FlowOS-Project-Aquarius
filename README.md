@@ -29,6 +29,24 @@ FlowOS replaces your shell session with an AI that has real system access. It ca
 
 ---
 
+## Build a Bootable ISO
+
+Requires [Docker Desktop](https://docs.docker.com/desktop/install/mac-install/) (Mac) or Docker Engine (Linux).
+
+```bash
+git clone https://github.com/Mattjhagen/FlowOS-Project-Aquarius.git
+cd FlowOS-Project-Aquarius
+./iso/build.sh
+```
+
+Output: `dist/flowos.iso` — flash it with [Balena Etcher](https://etcher.balena.io) or `dd`.
+
+**Boot flow:** GRUB → Linux kernel → custom initramfs → Alpine rootfs (squashfs) → auto-login → FlowOS CLI
+
+On first boot you'll be prompted for your Anthropic API key. It's stored in `~/.flowos/api_key`.
+
+---
+
 ## Links
 
 - **Docs:** [flowos.wiki](https://flowos.wiki)
