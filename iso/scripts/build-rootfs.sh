@@ -7,6 +7,13 @@ ROOTFS=/build/rootfs
 echo "==> Creating Alpine rootfs..."
 mkdir -p "$ROOTFS"
 
+# Enable community + edge repos for docker, nodejs, xclip, etc.
+mkdir -p "$ROOTFS/etc/apk"
+cat > "$ROOTFS/etc/apk/repositories" <<'REPOS'
+https://dl-cdn.alpinelinux.org/alpine/v3.21/main
+https://dl-cdn.alpinelinux.org/alpine/v3.21/community
+REPOS
+
 # Bootstrap Alpine into rootfs
 apk add --no-cache --root "$ROOTFS" --initdb \
     alpine-base \
@@ -39,7 +46,28 @@ apk add --no-cache --root "$ROOTFS" --initdb \
     openssl \
     less \
     vim \
-    nano
+    nano \
+    jq \
+    build-base \
+    make \
+    nodejs \
+    npm \
+    docker \
+    docker-openrc \
+    docker-compose \
+    dbus \
+    dbus-openrc \
+    xclip \
+    zip \
+    unzip \
+    tar \
+    rsync \
+    tmux \
+    file \
+    lsof \
+    strace \
+    nmap \
+    netcat-openbsd
 
 echo "==> Installing Python packages..."
 chroot "$ROOTFS" pip3 install --break-system-packages --no-cache-dir \
@@ -60,11 +88,13 @@ cp -r /src/plugins "$ROOTFS/opt/flowos/"
 cp -r /src/gui "$ROOTFS/opt/flowos/"
 
 echo "==> Configuring users..."
-# Create flowos user (uid 1000)
+# Create flowos user (uid 1000) and add to docker group
 chroot "$ROOTFS" sh -c "
     echo 'root:flowos' | chpasswd
+    addgroup -S docker 2>/dev/null || true
     addgroup -S flowos 2>/dev/null || true
     adduser -D -s /bin/sh -G flowos -h /home/flowos flowos 2>/dev/null || true
+    addgroup flowos docker 2>/dev/null || true
     echo 'flowos ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 "
 mkdir -p "$ROOTFS/home/flowos/.flowos"
@@ -83,6 +113,9 @@ chroot "$ROOTFS" sh -c "
     rc-update add networking boot 2>/dev/null || true
     rc-update add hostname boot 2>/dev/null || true
     rc-update add local default 2>/dev/null || true
+    rc-update add dbus boot 2>/dev/null || true
+    rc-update add docker default 2>/dev/null || true
+    rc-update add cgroups sysinit 2>/dev/null || true
 "
 
 # Set hostname
