@@ -6,6 +6,22 @@ An AI-powered desktop operating system interface. Instead of typing shell comman
 
 ---
 
+## Install (one line)
+
+**macOS · Linux · Termux (Android)**
+```bash
+curl -fsSL https://flowos.wiki/install.sh | bash
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://flowos.wiki/install.ps1 | iex
+```
+
+The installer detects your OS automatically, installs all dependencies, downloads FlowOS, and creates a `flowos` command. You'll be prompted for your [Anthropic API key](https://console.anthropic.com).
+
+---
+
 ## What it does
 
 FlowOS replaces your shell session with an AI that has real system access. It can run commands, manage files, install packages, check resources, and control your machine — all through natural conversation.
