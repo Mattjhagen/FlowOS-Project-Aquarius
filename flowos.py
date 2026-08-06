@@ -3,6 +3,12 @@ import os
 import sys
 import platform
 import anthropic
+
+# --store flag: launch the GUI plugin store
+if "--store" in sys.argv:
+    from gui.server import run as run_store
+    run_store()
+    sys.exit(0)
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel

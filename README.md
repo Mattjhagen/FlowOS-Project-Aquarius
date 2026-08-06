@@ -29,6 +29,14 @@ FlowOS replaces your shell session with an AI that has real system access. It ca
 
 ---
 
+## Links
+
+- **Docs:** [flowos.wiki](https://flowos.wiki)
+- **Install images:** [projectaquarius.space](https://projectaquarius.space)
+- **GitHub:** [FlowOS-Project-Aquarius](https://github.com/Mattjhagen/FlowOS-Project-Aquarius)
+
+---
+
 ## Install
 
 ```bash
@@ -107,21 +115,39 @@ FlowOS ships with 6 optional plugins. Enable them at startup or anytime with the
 
 ---
 
+## Plugin Store (GUI)
+
+Launch the visual plugin store in your browser:
+
+```bash
+python3 flowos.py --store
+```
+
+Opens at `http://localhost:7070` — browse and toggle plugins, see live system stats, launch FlowOS from the UI.
+
+---
+
 ## Architecture
 
 ```
-flowos.py          — main CLI loop + agent runner
-tools.py           — core system tools
-plugin_manager.py  — plugin loading, config, setup wizard
-session.py         — session persistence (~/.flowos/sessions/)
+flowos.py           — main CLI loop + agent runner (--store flag for GUI)
+tools.py            — core system tools
+plugin_manager.py   — plugin loading, config, setup wizard
+session.py          — session persistence (~/.flowos/sessions/)
+gui/
+  server.py         — FastAPI backend (port 7070)
+  store.html        — plugin store UI (single-page)
 plugins/
-  base.py          — Plugin base class
+  base.py           — Plugin base class
   git_plugin.py
   docker_plugin.py
   ssh_plugin.py
   notes_plugin.py
   weather_plugin.py
   clipboard_plugin.py
+  browser_plugin.py
+  spotify_plugin.py
+  homeserver_plugin.py
 ```
 
 Sessions and notes are stored in `~/.flowos/`.
