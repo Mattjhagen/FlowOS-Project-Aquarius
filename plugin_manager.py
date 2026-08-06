@@ -12,12 +12,15 @@ console = Console()
 CONFIG_PATH = Path.home() / ".flowos" / "plugins.json"
 
 AVAILABLE_PLUGINS = {
-    "git":       ("plugins.git_plugin",       "GitPlugin",       "Git repository management"),
-    "docker":    ("plugins.docker_plugin",    "DockerPlugin",    "Docker container management"),
-    "ssh":       ("plugins.ssh_plugin",       "SSHPlugin",       "Run commands on remote machines"),
-    "notes":     ("plugins.notes_plugin",     "NotesPlugin",     "Persistent note-taking"),
-    "weather":   ("plugins.weather_plugin",   "WeatherPlugin",   "Weather and forecast lookup"),
-    "clipboard": ("plugins.clipboard_plugin", "ClipboardPlugin", "Read/write system clipboard"),
+    "git":        ("plugins.git_plugin",        "GitPlugin",        "Git repository management"),
+    "docker":     ("plugins.docker_plugin",     "DockerPlugin",     "Docker container management"),
+    "ssh":        ("plugins.ssh_plugin",        "SSHPlugin",        "Run commands on remote machines"),
+    "notes":      ("plugins.notes_plugin",      "NotesPlugin",      "Persistent note-taking"),
+    "weather":    ("plugins.weather_plugin",    "WeatherPlugin",    "Weather and forecast lookup"),
+    "clipboard":  ("plugins.clipboard_plugin",  "ClipboardPlugin",  "Read/write system clipboard"),
+    "browser":    ("plugins.browser_plugin",    "BrowserPlugin",    "Open URLs, search web, screenshot pages  [snap: chromium]"),
+    "spotify":    ("plugins.spotify_plugin",    "SpotifyPlugin",    "Control Spotify playback              [snap: spotify]"),
+    "homeserver": ("plugins.homeserver_plugin", "HomeServerPlugin", "Manage home server at 192.168.0.169   [ssh]"),
 }
 
 

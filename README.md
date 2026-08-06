@@ -47,14 +47,17 @@ On first launch, a setup wizard lets you pick which plugins to enable.
 
 FlowOS ships with 6 optional plugins. Enable them at startup or anytime with the `plugins` command.
 
-| Plugin | What it does |
-|---|---|
-| `git` | Status, commit, push, log, diff |
-| `docker` | List containers, view logs, start/stop |
-| `ssh` | Run commands on remote machines |
-| `notes` | Save and retrieve persistent notes |
-| `weather` | Current conditions and 3-day forecast |
-| `clipboard` | Read from and write to the system clipboard |
+| Plugin | What it does | Requires |
+|---|---|---|
+| `git` | Status, commit, push, log, diff | git |
+| `docker` | List containers, view logs, start/stop | docker |
+| `ssh` | Run commands on remote machines | ssh |
+| `notes` | Save and retrieve persistent notes | — |
+| `weather` | Current conditions and 3-day forecast | — |
+| `clipboard` | Read from and write to the system clipboard | — |
+| `browser` | Open URLs, search web, screenshot pages, fetch content | `sudo snap install chromium` |
+| `spotify` | Play/pause, skip, volume, search, current track | `sudo snap install spotify` |
+| `homeserver` | Manage home server (192.168.0.169) — status, services, docker, deploy, snaps | ssh access |
 
 ### Managing plugins
 
@@ -100,6 +103,7 @@ FlowOS ships with 6 optional plugins. Enable them at startup or anytime with the
 - [ ] Bootable ISO (Alpine/Buildroot base)
 - [ ] Local LLM support (offline mode via Ollama)
 - [ ] Custom plugin API (write your own)
+- [ ] Snap store browser (discover and install snaps via FlowOS)
 
 ---
 

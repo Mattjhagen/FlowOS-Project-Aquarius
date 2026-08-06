@@ -93,7 +93,7 @@ TOOL_DEFINITIONS = [
                 },
                 "manager": {
                     "type": "string",
-                    "enum": ["auto", "brew", "apt", "pip", "npm", "cargo"],
+                    "enum": ["auto", "brew", "snap", "apt", "pip", "npm", "cargo"],
                     "description": "Package manager to use. 'auto' detects the best one."
                 }
             },
@@ -208,6 +208,8 @@ def install_package(package: str, manager: str = "auto") -> dict:
     if manager == "auto":
         if platform.system() == "Darwin":
             manager = "brew"
+        elif shutil.which("snap"):
+            manager = "snap"
         elif shutil.which("apt"):
             manager = "apt"
         else:
@@ -215,8 +217,9 @@ def install_package(package: str, manager: str = "auto") -> dict:
 
     commands = {
         "brew": f"brew install {package}",
+        "snap": f"sudo snap install {package}",
         "apt": f"sudo apt-get install -y {package}",
-        "pip": f"pip install {package}",
+        "pip": f"pip3 install {package}",
         "npm": f"npm install -g {package}",
         "cargo": f"cargo install {package}"
     }
