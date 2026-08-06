@@ -1,62 +1,169 @@
 #!/bin/sh
-# FlowOS initramfs init — mounts squashfs rootfs from ISO with tmpfs overlay
+# FlowOS initramfs init — v0.0.2
+
+# ── ANSI palette ────────────────────────────────────────────────
+E=$(printf '\033')
+CY="${E}[38;5;45m"       # cyan
+WH="${E}[97m"            # bright white
+GR="${E}[38;5;245m"      # mid gray
+YL="${E}[38;5;220m"      # yellow
+RD="${E}[38;5;196m"      # red
+BD="${E}[1m"             # bold
+DM="${E}[2m"             # dim
+RS="${E}[0m"             # reset all
+HC="${E}[?25l"           # hide cursor
+SC="${E}[?25h"           # show cursor
+CLS="${E}[2J${E}[H"      # clear screen + cursor home
+
+# ── Splash ──────────────────────────────────────────────────────
+show_splash() {
+    printf "${CLS}${HC}\n\n\n"
+    printf "  ${CY}${BD}"
+    printf '   ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗ ███████╗\n'
+    printf '   ██╔════╝██║     ██╔═══██╗██║    ██║██╔═══██╗██╔════╝\n'
+    printf '   █████╗  ██║     ██║   ██║██║ █╗ ██║██║   ██║███████╗\n'
+    printf '   ██╔══╝  ██║     ██║   ██║██║███╗██║██║   ██║╚════██║\n'
+    printf '   ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╔╝███████║\n'
+    printf '   ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝ ╚══════╝\n'
+    printf "${RS}\n"
+    printf "                 ${GR}AI-Powered Desktop OS  ·  v0.0.2${RS}\n"
+    printf "\n"
+    printf "  ${DM}${CY}  ─────────────────────────────────────────────────────${RS}\n\n"
+}
+
+# ── Status line helpers ─────────────────────────────────────────
+#   step "msg"  — shows animated spinner, then resolves with ok/fail
+#   ok / warn / fail — static one-shot lines
+
+_spin() {
+    msg="$1"
+    i=0
+    while [ $i -lt 10 ]; do
+        case $((i % 4)) in
+            0) SP='-' ;; 1) SP='\\' ;; 2) SP='|' ;; 3) SP='/' ;;
+        esac
+        printf "\r  ${CY}${SP}${RS}  ${WH}${msg}${GR}...${RS}   "
+        sleep 0.08
+        i=$((i + 1))
+    done
+}
+
+ok()   { printf "\r  ${CY}+${RS}  ${WH}$1${RS}${E}[K\n"; }
+warn() { printf "\r  ${YL}!${RS}  ${YL}$1${RS}${E}[K\n"; }
+fail() { printf "\r  ${RD}x${RS}  ${RD}$1${RS}${E}[K\n"; }
+
+step() {
+    _spin "$1"
+    ok "$1"
+}
 
 rescue_shell() {
-    echo ":: Dropping to rescue shell"
+    printf "\n"
+    fail "Boot failed — dropping to rescue shell"
+    printf "${SC}"
     exec /bin/sh
 }
 
-echo ":: FlowOS booting..."
-
-mount -t proc none /proc
-mount -t sysfs none /sys
+# ── Early mounts (must happen before clear) ─────────────────────
+mount -t proc    none /proc
+mount -t sysfs   none /sys
 mount -t devtmpfs none /dev 2>/dev/null || mdev -s
 
-# Load essential modules
-for mod in squashfs overlay loop iso9660 sr_mod cdrom; do
-    modprobe $mod 2>/dev/null
+show_splash
+
+# ── Kernel cmdline ──────────────────────────────────────────────
+PERSIST=0
+for param in $(cat /proc/cmdline); do
+    [ "$param" = "persistent" ] && PERSIST=1
 done
 
-mkdir -p /mnt/iso /mnt/squash /mnt/root /mnt/overlay/upper /mnt/overlay/work
+# ── Load modules ────────────────────────────────────────────────
+printf "  ${CY}-${RS}  ${WH}Initializing hardware${GR}...${RS}"
+for mod in squashfs overlay loop iso9660 sr_mod cdrom ext4; do
+    modprobe $mod 2>/dev/null
+done
+ok "Initializing hardware"
 
-# Find the ISO (CD-ROM or USB)
-echo ":: Scanning for FlowOS media..."
-found=""
+mkdir -p /mnt/iso /mnt/squash /mnt/root /mnt/overlay
+
+# ── Find FlowOS media ───────────────────────────────────────────
+printf "  ${CY}-${RS}  ${WH}Scanning for FlowOS media${GR}...${RS}"
+ISO_DEV=""
 for try in 1 2 3 4 5; do
-    for dev in /dev/sr0 /dev/sr1 /dev/sda /dev/sda1 /dev/sdb /dev/sdb1 /dev/sdc /dev/sdc1; do
+    case $((try % 4)) in
+        1) SP='-' ;; 2) SP='\\' ;; 3) SP='|' ;; 0) SP='/' ;;
+    esac
+    printf "\r  ${CY}${SP}${RS}  ${WH}Scanning for FlowOS media ${GR}[$try/5]${RS}   "
+    for dev in /dev/sr0 /dev/sr1 /dev/sda /dev/sda1 /dev/sdb /dev/sdb1 /dev/sdc /dev/sdc1 /dev/sdd /dev/sdd1; do
         [ -b "$dev" ] || continue
         if mount -t iso9660 -o ro "$dev" /mnt/iso 2>/dev/null; then
             if [ -f /mnt/iso/flowos/rootfs.squashfs ]; then
-                found="$dev"
+                ISO_DEV="$dev"
                 break 2
             fi
             umount /mnt/iso 2>/dev/null
         fi
     done
-    echo ":: Waiting for devices... ($try/5)"
     sleep 1
 done
 
-[ -z "$found" ] && rescue_shell
+if [ -z "$ISO_DEV" ]; then
+    fail "FlowOS media not found"
+    rescue_shell
+fi
+ok "Found FlowOS on ${GR}${ISO_DEV}"
 
-echo ":: Found FlowOS on $found"
-
-# Mount squashfs read-only
+# ── Mount squashfs ──────────────────────────────────────────────
+printf "  ${CY}-${RS}  ${WH}Loading filesystem${GR}...${RS}"
 mount -t squashfs -o loop,ro /mnt/iso/flowos/rootfs.squashfs /mnt/squash \
     || rescue_shell
+ok "Filesystem loaded"
 
-# OverlayFS — tmpfs upper layer makes the system writable in RAM
-mount -t tmpfs tmpfs /mnt/overlay
-mkdir -p /mnt/overlay/upper /mnt/overlay/work
+# ── Overlay (persistent or live) ────────────────────────────────
+UPPER=/mnt/overlay/upper
+WORK=/mnt/overlay/work
+
+if [ "$PERSIST" = "1" ]; then
+    printf "  ${CY}-${RS}  ${WH}Locating persistence partition${GR}...${RS}"
+    PERSIST_DEV=""
+    for dev in /dev/sda2 /dev/sda3 /dev/sdb2 /dev/sdb3 /dev/sdc2 /dev/sdc3 /dev/sdd2 /dev/sdd3; do
+        [ -b "$dev" ] || continue
+        label=$(blkid -s LABEL -o value "$dev" 2>/dev/null)
+        if [ "$label" = "flowos-data" ]; then
+            PERSIST_DEV="$dev"
+            break
+        fi
+    done
+
+    if [ -n "$PERSIST_DEV" ]; then
+        mount -t ext4 "$PERSIST_DEV" /mnt/overlay \
+            || mount -t ext4 -o errors=remount-ro "$PERSIST_DEV" /mnt/overlay
+        mkdir -p /mnt/overlay/upper /mnt/overlay/work
+        ok "Persistent storage on ${GR}${PERSIST_DEV}"
+    else
+        warn "No persistence partition found  (run make-persistent.sh to enable)"
+        mount -t tmpfs tmpfs /mnt/overlay
+        mkdir -p /mnt/overlay/upper /mnt/overlay/work
+    fi
+else
+    mount -t tmpfs tmpfs /mnt/overlay
+    mkdir -p /mnt/overlay/upper /mnt/overlay/work
+    ok "Live mode  ${GR}(changes not saved)"
+fi
+
+# ── Assemble root ───────────────────────────────────────────────
+printf "  ${CY}-${RS}  ${WH}Preparing environment${GR}...${RS}"
 mount -t overlay overlay \
-    -o lowerdir=/mnt/squash,upperdir=/mnt/overlay/upper,workdir=/mnt/overlay/work \
+    -o lowerdir=/mnt/squash,upperdir=$UPPER,workdir=$WORK \
     /mnt/root || rescue_shell
 
-# Mount proc/sys/dev in new root
-mkdir -p /mnt/root/{proc,sys,dev,run}
+mkdir -p /mnt/root/proc /mnt/root/sys /mnt/root/dev /mnt/root/run
 mount --bind /proc /mnt/root/proc
-mount --bind /sys /mnt/root/sys
-mount --bind /dev /mnt/root/dev
+mount --bind /sys  /mnt/root/sys
+mount --bind /dev  /mnt/root/dev
+ok "Environment ready"
 
-echo ":: Switching root..."
+printf "\n  ${CY}${BD}Launching FlowOS...${RS}\n\n${SC}"
+sleep 0.4
+
 exec switch_root /mnt/root /sbin/init

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#050C13"/>
+      <stop offset="100%" stop-color="#0B1E32"/>
+    </linearGradient>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#00B4D8" stroke-width="0.4" opacity="0.12"/>
+    </pattern>
+    <radialGradient id="glow" cx="50%" cy="50%" r="35%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#00B4D8" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#050C13" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background gradient -->
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <!-- Tech grid overlay -->
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <!-- Center glow -->
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+
+  <!-- Horizontal accent lines -->
+  <line x1="0" y1="310" x2="1920" y2="310" stroke="#00B4D8" stroke-width="0.6" opacity="0.13"/>
+  <line x1="0" y1="770" x2="1920" y2="770" stroke="#00B4D8" stroke-width="0.6" opacity="0.13"/>
+
+  <!-- Corner brackets — top left -->
+  <polyline points="80,150 80,80 150,80" fill="none" stroke="#00B4D8" stroke-width="2.5" opacity="0.55"/>
+  <!-- top right -->
+  <polyline points="1770,80 1840,80 1840,150" fill="none" stroke="#00B4D8" stroke-width="2.5" opacity="0.55"/>
+  <!-- bottom left -->
+  <polyline points="80,930 80,1000 150,1000" fill="none" stroke="#00B4D8" stroke-width="2.5" opacity="0.55"/>
+  <!-- bottom right -->
+  <polyline points="1770,1000 1840,1000 1840,930" fill="none" stroke="#00B4D8" stroke-width="2.5" opacity="0.55"/>
+
+  <!-- Top accent bar -->
+  <rect x="710" y="418" width="500" height="1.5" fill="#00B4D8" opacity="0.45"/>
+
+  <!-- Main FLOWOS logotype -->
+  <text x="960" y="520"
+        font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"
+        font-weight="bold"
+        font-size="116"
+        fill="#00B4D8"
+        text-anchor="middle"
+        letter-spacing="22">FLOWOS</text>
+
+  <!-- Bottom accent bar -->
+  <rect x="710" y="540" width="500" height="1.5" fill="#00B4D8" opacity="0.45"/>
+
+  <!-- Subtitle -->
+  <text x="960" y="600"
+        font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"
+        font-size="21"
+        fill="#4a9fc8"
+        text-anchor="middle"
+        letter-spacing="9">AI-POWERED DESKTOP OS</text>
+
+  <!-- Version -->
+  <text x="960" y="642"
+        font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"
+        font-size="15"
+        fill="#1a4a6a"
+        text-anchor="middle"
+        letter-spacing="4">v0.0.2</text>
+
+  <!-- Flanking accent dots -->
+  <circle cx="685" cy="530" r="3.5" fill="#00B4D8" opacity="0.45"/>
+  <circle cx="662" cy="530" r="2"   fill="#00B4D8" opacity="0.25"/>
+  <circle cx="1235" cy="530" r="3.5" fill="#00B4D8" opacity="0.45"/>
+  <circle cx="1258" cy="530" r="2"   fill="#00B4D8" opacity="0.25"/>
+</svg>

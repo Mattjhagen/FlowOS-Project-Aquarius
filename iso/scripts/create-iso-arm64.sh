@@ -1,11 +1,11 @@
 #!/bin/sh
-# Runs INSIDE Docker. Assembles the final bootable ISO.
+# Runs INSIDE Docker. Assembles the ARM64 bootable ISO (UEFI only — no BIOS).
 set -e
 
 ISO_ROOT=/build/iso
 OUT=/build/flowos.iso
 
-echo "==> Assembling ISO structure..."
+echo "==> Assembling ARM64 ISO structure..."
 mkdir -p "$ISO_ROOT/boot/grub" "$ISO_ROOT/flowos" "$ISO_ROOT/EFI/BOOT"
 
 # Kernel
@@ -25,24 +25,19 @@ echo "==> Initramfs: $(du -sh /build/initrd.img | cut -f1)"
 # GRUB config
 cp /src/iso/grub/grub.cfg "$ISO_ROOT/boot/grub/grub.cfg"
 
-# GRUB splash background
+# GRUB splash + font
 if [ -f /build/splash.png ]; then
     cp /build/splash.png "$ISO_ROOT/boot/grub/splash.png"
     echo "==> Splash: $(du -sh $ISO_ROOT/boot/grub/splash.png | cut -f1)"
 fi
-
-# GRUB unicode font (needed for gfxterm)
 mkdir -p "$ISO_ROOT/boot/grub/fonts"
 UNICODE_PF2=$(find /usr/share/grub /usr/lib/grub -name "unicode.pf2" 2>/dev/null | head -1)
-if [ -n "$UNICODE_PF2" ]; then
-    cp "$UNICODE_PF2" "$ISO_ROOT/boot/grub/fonts/unicode.pf2"
-    echo "==> Font: $UNICODE_PF2"
-fi
+[ -n "$UNICODE_PF2" ] && cp "$UNICODE_PF2" "$ISO_ROOT/boot/grub/fonts/unicode.pf2"
 
-# Squashfs rootfs
+# Squashfs rootfs (ARM BCJ filter instead of x86)
 echo "==> Creating squashfs rootfs (this takes a while)..."
 mksquashfs /build/rootfs "$ISO_ROOT/flowos/rootfs.squashfs" \
-    -comp xz -Xbcj x86 -b 1M \
+    -comp xz -Xbcj arm -b 1M \
     -no-progress \
     -e /build/rootfs/proc \
     -e /build/rootfs/sys \
@@ -50,48 +45,32 @@ mksquashfs /build/rootfs "$ISO_ROOT/flowos/rootfs.squashfs" \
     -e /build/rootfs/tmp
 echo "==> Squashfs: $(du -sh $ISO_ROOT/flowos/rootfs.squashfs | cut -f1)"
 
-# GRUB BIOS boot image
-echo "==> Installing GRUB..."
+# GRUB EFI image for ARM64
+echo "==> Installing GRUB (arm64-efi)..."
 grub-mkimage \
-    -O i386-pc \
-    -o "$ISO_ROOT/boot/grub/core.img" \
-    -p "/boot/grub" \
-    biosdisk iso9660 normal search search_fs_file linux echo \
-    gzio part_msdos part_gpt fat ext2 ls reboot halt
-
-# GRUB EFI image
-grub-mkimage \
-    -O x86_64-efi \
-    -o "$ISO_ROOT/EFI/BOOT/BOOTX64.EFI" \
+    -O arm64-efi \
+    -o "$ISO_ROOT/EFI/BOOT/BOOTAA64.EFI" \
     -p "/boot/grub" \
     iso9660 normal search search_fs_file linux echo \
     gzio part_msdos part_gpt fat ext2 ls reboot halt
 
-# Create EFI boot image
+# EFI boot image
 dd if=/dev/zero of="$ISO_ROOT/boot/grub/efi.img" bs=1M count=4
 mkfs.vfat "$ISO_ROOT/boot/grub/efi.img"
 mmd -i "$ISO_ROOT/boot/grub/efi.img" ::/EFI ::/EFI/BOOT
-mcopy -i "$ISO_ROOT/boot/grub/efi.img" "$ISO_ROOT/EFI/BOOT/BOOTX64.EFI" ::/EFI/BOOT/
+mcopy -i "$ISO_ROOT/boot/grub/efi.img" "$ISO_ROOT/EFI/BOOT/BOOTAA64.EFI" ::/EFI/BOOT/
 
 # GRUB modules
-mkdir -p "$ISO_ROOT/boot/grub/i386-pc"
-cp /usr/lib/grub/i386-pc/*.mod "$ISO_ROOT/boot/grub/i386-pc/" 2>/dev/null || true
-mkdir -p "$ISO_ROOT/boot/grub/x86_64-efi"
-cp /usr/lib/grub/x86_64-efi/*.mod "$ISO_ROOT/boot/grub/x86_64-efi/" 2>/dev/null || true
-cp /usr/lib/grub/x86_64-efi/*.lst "$ISO_ROOT/boot/grub/x86_64-efi/" 2>/dev/null || true
+mkdir -p "$ISO_ROOT/boot/grub/arm64-efi"
+cp /usr/lib/grub/arm64-efi/*.mod "$ISO_ROOT/boot/grub/arm64-efi/" 2>/dev/null || true
+cp /usr/lib/grub/arm64-efi/*.lst "$ISO_ROOT/boot/grub/arm64-efi/" 2>/dev/null || true
 
-# Build ISO with xorriso (BIOS + UEFI hybrid)
+# Build ISO — EFI only (ARM64 has no BIOS/legacy boot)
 echo "==> Building ISO with xorriso..."
 xorriso -as mkisofs \
     -iso-level 3 \
     -full-iso9660-filenames \
-    -volid "FLOWOS" \
-    -eltorito-boot boot/grub/core.img \
-    -no-emul-boot \
-    -boot-load-size 4 \
-    -boot-info-table \
-    --grub2-boot-info \
-    --grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
+    -volid "FLOWOS_ARM64" \
     -eltorito-alt-boot \
     -e boot/grub/efi.img \
     -no-emul-boot \
@@ -101,12 +80,11 @@ xorriso -as mkisofs \
 
 echo ""
 echo "=========================================="
-echo "  FlowOS ISO built successfully!"
+echo "  FlowOS ARM64 ISO built successfully!"
 echo "  Output: $OUT"
 echo "  Size:   $(du -sh $OUT | cut -f1)"
 echo "=========================================="
 echo ""
-echo "  Write to USB:"
-echo "  Linux:  sudo dd if=flowos.iso of=/dev/sdX bs=4M status=progress"
-echo "  Mac:    Use Balena Etcher — https://etcher.balena.io"
-echo "  Win:    Use Rufus — https://rufus.ie"
+echo "  Test in UTM on Apple Silicon:"
+echo "  New VM → Virtualize → Linux → select this ISO"
+echo "  Set RAM to 2048MB+ for best performance"

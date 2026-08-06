@@ -1,0 +1,41 @@
+# FlowOS ISO Builder — ARM64 (Apple Silicon M1/M2/M3/M4)
+# Build: ./iso/build-arm64.sh
+# Test:  UTM → Virtualize → Linux → select flowos-arm64.iso
+
+FROM alpine:3.21
+
+RUN apk add --no-cache \
+    squashfs-tools \
+    xorriso \
+    grub \
+    grub-efi \
+    mtools \
+    dosfstools \
+    cpio \
+    gzip \
+    busybox-static \
+    linux-lts \
+    python3 \
+    py3-pip \
+    bash \
+    curl \
+    wget \
+    findutils \
+    coreutils \
+    librsvg \
+    font-dejavu
+
+RUN mkdir -p /build /output /src
+
+COPY . /src/
+
+# Generate GRUB splash PNG from SVG
+RUN rsvg-convert -w 1920 -h 1080 /src/iso/grub/splash.svg -o /build/splash.png
+
+RUN chmod +x /src/iso/scripts/*.sh /src/iso/initramfs/init
+
+RUN sh /src/iso/scripts/build-rootfs.sh
+RUN sh /src/iso/scripts/build-initramfs.sh
+RUN sh /src/iso/scripts/create-iso-arm64.sh
+
+CMD ["sh", "-c", "cp /build/flowos.iso /output/flowos-arm64.iso && echo 'ISO ready at dist/flowos-arm64.iso'"]

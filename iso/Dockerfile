@@ -32,8 +32,14 @@ RUN apk add --no-cache \
 # Create build workspace
 RUN mkdir -p /build /output /src
 
+# Add librsvg + DejaVu fonts for splash PNG generation
+RUN apk add --no-cache librsvg font-dejavu
+
 # Copy the entire FlowOS repo into the build context
 COPY . /src/
+
+# Generate GRUB splash PNG from SVG
+RUN rsvg-convert -w 1920 -h 1080 /src/iso/grub/splash.svg -o /build/splash.png
 
 # Make all scripts executable
 RUN chmod +x /src/iso/scripts/*.sh /src/iso/initramfs/init
