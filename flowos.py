@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import json
 import platform
 import anthropic
 from rich.console import Console
@@ -15,13 +14,18 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pathlib import Path
 
-from tools import TOOL_DEFINITIONS, execute_tool
+from tools import TOOL_DEFINITIONS as CORE_TOOLS, execute_tool as execute_core_tool
 from session import load_session, save_session, list_sessions, new_session_id
+from plugin_manager import (
+    load_active_plugins, get_all_tools, show_plugin_table,
+    setup_wizard, enable_plugin, disable_plugin, load_config, AVAILABLE_PLUGINS
+)
 
 console = Console()
 
 HISTORY_FILE = Path.home() / ".flowos" / "history"
 HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+PLUGINS_CONFIG = Path.home() / ".flowos" / "plugins.json"
 
 SYSTEM_PROMPT = f"""You are FlowOS, an AI-powered desktop operating system assistant. You ARE the operating system interface — not a helper layered on top of it.
 
@@ -38,18 +42,34 @@ Your role:
 - Never ask for confirmation on read-only operations
 - For writes, installs, or deletes — briefly state what you're about to do, then do it
 
-You have tools for: running shell commands, reading/writing files, checking system resources, listing processes, and installing packages.
+You have core tools for: shell commands, file I/O, system resources, processes, and package installs.
+Additional plugin tools may also be available depending on what the user has enabled.
 
 Keep responses short and direct. You are the OS, not a chatbot."""
 
 
-def print_banner():
+def print_banner(active_plugins: list):
+    plugin_names = [p.name for p in active_plugins]
+    subtitle = f"[dim]plugins: {', '.join(plugin_names) or 'none'} · 'plugins' to manage · 'exit' to quit[/dim]"
     console.print(Panel(
-        Text("FlowOS Desktop", style="bold cyan", justify="center") ,
-        subtitle="[dim]type 'exit' to quit · 'sessions' to resume · 'clear' to reset[/dim]",
+        Text("FlowOS Desktop", style="bold cyan", justify="center"),
+        subtitle=subtitle,
         border_style="cyan"
     ))
     console.print()
+
+
+def build_tool_executor(plugin_handlers: dict):
+    def execute_tool(name: str, inputs: dict) -> str:
+        # Try core tools first, then plugins
+        if name in plugin_handlers:
+            try:
+                result = plugin_handlers[name](**inputs)
+                return str(result) if result is not None else "Done."
+            except Exception as e:
+                return f"Plugin tool error: {e}"
+        return execute_core_tool(name, inputs)
+    return execute_tool
 
 
 def print_tool_call(name: str, inputs: dict):
@@ -59,23 +79,37 @@ def print_tool_call(name: str, inputs: dict):
         "write_file": f"[dim]writing {inputs.get('path', '')}[/dim]",
         "get_system_info": "[dim]checking system resources[/dim]",
         "list_processes": "[dim]listing processes[/dim]",
-        "install_package": f"[dim]installing {inputs.get('package', '')} via {inputs.get('manager', 'auto')}[/dim]",
-    }.get(name, f"[dim]{name}[/dim]")
+        "install_package": f"[dim]installing {inputs.get('package', '')}[/dim]",
+        "git_status": "[dim]git status[/dim]",
+        "git_commit": f"[dim]git commit: {inputs.get('message', '')}[/dim]",
+        "git_push": "[dim]git push[/dim]",
+        "git_log": "[dim]git log[/dim]",
+        "git_diff": "[dim]git diff[/dim]",
+        "docker_ps": "[dim]docker ps[/dim]",
+        "docker_logs": f"[dim]docker logs {inputs.get('container', '')}[/dim]",
+        "ssh_run": f"[dim]ssh {inputs.get('host', '')} '{inputs.get('command', '')}'[/dim]",
+        "note_save": f"[dim]saving note: {inputs.get('title', '')}[/dim]",
+        "note_get": f"[dim]reading note: {inputs.get('title', '')}[/dim]",
+        "note_list": "[dim]listing notes[/dim]",
+        "weather_now": f"[dim]weather: {inputs.get('location', 'auto')}[/dim]",
+        "clipboard_read": "[dim]reading clipboard[/dim]",
+        "clipboard_write": "[dim]writing to clipboard[/dim]",
+    }.get(name, f"[dim]{name}({', '.join(f'{k}={v}' for k, v in inputs.items())})[/dim]")
     console.print(f"  [cyan]→[/cyan] {label}")
 
 
-def run_agent_loop(client: anthropic.Anthropic, messages: list, session_id: str):
+def run_agent_loop(client: anthropic.Anthropic, messages: list, session_id: str,
+                   all_tools: list, execute_tool):
     while True:
         with Live(Spinner("dots", text="[cyan]thinking...[/cyan]"), console=console, refresh_per_second=10):
             response = client.messages.create(
                 model="claude-sonnet-4-5",
                 max_tokens=4096,
                 system=SYSTEM_PROMPT,
-                tools=TOOL_DEFINITIONS,
+                tools=all_tools,
                 messages=messages
             )
 
-        # Collect text content and tool uses
         text_parts = []
         tool_uses = []
 
@@ -85,39 +119,34 @@ def run_agent_loop(client: anthropic.Anthropic, messages: list, session_id: str)
             elif block.type == "tool_use":
                 tool_uses.append(block)
 
-        # Print any text response
         if text_parts:
             text = "\n".join(text_parts).strip()
             if text:
                 console.print(Markdown(text))
                 console.print()
 
-        # If no tool calls, we're done
         if not tool_uses or response.stop_reason == "end_turn":
             messages.append({"role": "assistant", "content": response.content})
             save_session(session_id, messages)
             break
 
-        # Execute tool calls
         messages.append({"role": "assistant", "content": response.content})
         tool_results = []
 
         for tool_use in tool_uses:
             print_tool_call(tool_use.name, tool_use.input)
             result = execute_tool(tool_use.name, tool_use.input)
-            # Truncate very long outputs
-            if len(result) > 3000:
-                result = result[:3000] + "\n... (truncated)"
+            if len(str(result)) > 3000:
+                result = str(result)[:3000] + "\n... (truncated)"
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_use.id,
-                "content": result
+                "content": str(result)
             })
 
         console.print()
         messages.append({"role": "user", "content": tool_results})
         save_session(session_id, messages)
-        # Loop continues — model will process tool results
 
 
 def main():
@@ -129,9 +158,19 @@ def main():
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    print_banner()
+    # First-run setup wizard
+    if not PLUGINS_CONFIG.exists():
+        setup_wizard(first_run=True)
 
-    # Check for resume flag
+    # Load plugins
+    active_plugins = load_active_plugins()
+    plugin_tool_defs, plugin_handlers = get_all_tools(active_plugins)
+    all_tools = CORE_TOOLS + plugin_tool_defs
+    execute_tool = build_tool_executor(plugin_handlers)
+
+    print_banner(active_plugins)
+
+    # Resume session flag
     session_id = new_session_id()
     messages = []
 
@@ -142,7 +181,7 @@ def main():
             for i, s in enumerate(sessions[:5]):
                 console.print(f"  [cyan]{i+1}.[/cyan] [{s['modified']}] {s['preview']}")
             console.print()
-            choice = prompt("Resume session (number) or press Enter to start new: ").strip()
+            choice = prompt("Resume session (number) or Enter for new: ").strip()
             if choice.isdigit() and 1 <= int(choice) <= len(sessions):
                 selected = sessions[int(choice) - 1]
                 session_id = selected["id"]
@@ -165,6 +204,7 @@ def main():
         if not user_input:
             continue
 
+        # Built-in commands
         if user_input.lower() in ("exit", "quit", "q"):
             console.print("[dim]Goodbye.[/dim]")
             break
@@ -173,14 +213,14 @@ def main():
             messages = []
             session_id = new_session_id()
             console.clear()
-            print_banner()
+            print_banner(active_plugins)
             console.print("[dim]Session cleared.[/dim]\n")
             continue
 
         if user_input.lower() == "sessions":
             sessions = list_sessions()
             if not sessions:
-                console.print("[dim]No previous sessions found.[/dim]\n")
+                console.print("[dim]No previous sessions.[/dim]\n")
             else:
                 console.print("[bold]Recent sessions:[/bold]")
                 for i, s in enumerate(sessions[:5]):
@@ -188,11 +228,43 @@ def main():
                 console.print()
             continue
 
+        if user_input.lower() == "plugins":
+            setup_wizard(first_run=False)
+            # Reload plugins after changes
+            active_plugins = load_active_plugins()
+            plugin_tool_defs, plugin_handlers = get_all_tools(active_plugins)
+            all_tools = CORE_TOOLS + plugin_tool_defs
+            execute_tool = build_tool_executor(plugin_handlers)
+            console.print(f"[dim]Active: {', '.join(p.name for p in active_plugins) or 'none'}[/dim]\n")
+            continue
+
+        if user_input.lower().startswith("enable "):
+            name = user_input[7:].strip()
+            console.print(enable_plugin(name) + "\n")
+            continue
+
+        if user_input.lower().startswith("disable "):
+            name = user_input[8:].strip()
+            console.print(disable_plugin(name) + "\n")
+            active_plugins = load_active_plugins()
+            plugin_tool_defs, plugin_handlers = get_all_tools(active_plugins)
+            all_tools = CORE_TOOLS + plugin_tool_defs
+            execute_tool = build_tool_executor(plugin_handlers)
+            continue
+
+        if user_input.lower() == "reload plugins":
+            active_plugins = load_active_plugins()
+            plugin_tool_defs, plugin_handlers = get_all_tools(active_plugins)
+            all_tools = CORE_TOOLS + plugin_tool_defs
+            execute_tool = build_tool_executor(plugin_handlers)
+            console.print(f"[green]Reloaded.[/green] Active: {', '.join(p.name for p in active_plugins) or 'none'}\n")
+            continue
+
         messages.append({"role": "user", "content": user_input})
         console.print()
 
         try:
-            run_agent_loop(client, messages, session_id)
+            run_agent_loop(client, messages, session_id, all_tools, execute_tool)
         except anthropic.APIError as e:
             console.print(f"[red]API error:[/red] {e}\n")
         except Exception as e:
