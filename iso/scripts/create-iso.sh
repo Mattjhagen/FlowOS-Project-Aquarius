@@ -51,7 +51,7 @@ grub-mkimage \
     -o "$ISO_ROOT/EFI/BOOT/BOOTX64.EFI" \
     -p "/boot/grub" \
     iso9660 normal search search_fs_file linux echo \
-    gzio part_msdos part_gpt fat ext2 ls reboot halt efistub
+    gzio part_msdos part_gpt fat ext2 ls reboot halt
 
 # Create EFI boot image
 dd if=/dev/zero of="$ISO_ROOT/boot/grub/efi.img" bs=1M count=4
