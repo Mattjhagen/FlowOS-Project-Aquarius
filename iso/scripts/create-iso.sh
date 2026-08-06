@@ -6,7 +6,7 @@ ISO_ROOT=/build/iso
 OUT=/output/flowos.iso
 
 echo "==> Assembling ISO structure..."
-mkdir -p "$ISO_ROOT"/{boot/grub,flowos,EFI/BOOT}
+mkdir -p "$ISO_ROOT/boot/grub" "$ISO_ROOT/flowos" "$ISO_ROOT/EFI/BOOT"
 
 # Kernel
 VMLINUZ=$(find /boot -name 'vmlinuz*' | head -1)
