@@ -58,7 +58,7 @@ docker run \
     --privileged \
     -v "$DIST:/output" \
     "$IMAGE_NAME" \
-    sh -c "cp /output/flowos.iso /output/"
+    sh -c "cp /build/flowos.iso /output/flowos.iso"
 
 ISO_PATH="$DIST/$ISO_NAME"
 ISO_SIZE=$(du -sh "$ISO_PATH" 2>/dev/null | cut -f1 || echo "unknown")
