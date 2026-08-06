@@ -3,13 +3,15 @@ import os
 import subprocess
 import webbrowser
 import threading
+import json
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from plugin_manager import (
@@ -113,6 +115,69 @@ async def launch_flowos():
         return {"launched": True}
     except Exception as e:
         return {"launched": False, "error": str(e)}
+
+
+_SNAP_API = "https://api.snapcraft.io/v2/snaps/find"
+_SNAP_HEADERS = {"Snap-Device-Series": "16", "User-Agent": "FlowOS/0.2"}
+
+
+@app.get("/api/snaps/search")
+async def snap_search(q: str = Query(default=""), category: str = Query(default="")):
+    params = {"fields": "name,title,summary,media,version,publisher"}
+    if q:
+        params["q"] = q
+    elif category:
+        params["category"] = category
+    else:
+        params["category"] = "featured"
+
+    url = _SNAP_API + "?" + urlencode(params)
+    try:
+        req = Request(url, headers=_SNAP_HEADERS)
+        with urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        snaps = []
+        for r in data.get("results", []):
+            s = r.get("snap", {})
+            icon = next((m["url"] for m in s.get("media", []) if m.get("type") == "icon"), None)
+            snaps.append({
+                "name": s.get("name", ""),
+                "title": s.get("title") or s.get("name", ""),
+                "summary": s.get("summary", ""),
+                "version": s.get("version", ""),
+                "publisher": s.get("publisher", {}).get("display-name", ""),
+                "icon": icon,
+            })
+        return snaps
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/snaps/install")
+async def snap_install(body: dict):
+    import platform, shutil
+    name = body.get("name", "").strip()
+    if not name or not all(c.isalnum() or c in "-+" for c in name):
+        raise HTTPException(status_code=400, detail="Invalid snap name")
+
+    if platform.system() == "Darwin":
+        return {"ok": False, "cmd": f"brew install {name}"}
+
+    if not shutil.which("snap"):
+        return {"ok": False, "cmd": f"sudo apt install snapd && sudo snap install {name}"}
+
+    try:
+        result = subprocess.run(
+            ["sudo", "snap", "install", name],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            return {"ok": True, "cmd": None}
+        return {"ok": False, "cmd": f"sudo snap install {name}", "error": result.stderr.strip()}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "cmd": f"sudo snap install {name}"}
+    except Exception as e:
+        return {"ok": False, "cmd": f"sudo snap install {name}"}
 
 
 def open_browser(port: int):
