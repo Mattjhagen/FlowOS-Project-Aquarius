@@ -72,6 +72,9 @@ apk add --no-cache --root "$ROOTFS" --initdb \
     nmap \
     netcat-openbsd
 
+# Chroot needs DNS to reach PyPI
+cp /etc/resolv.conf "$ROOTFS/etc/resolv.conf"
+
 echo "==> Installing Python packages..."
 chroot "$ROOTFS" pip3 install --break-system-packages --no-cache-dir \
     anthropic \
