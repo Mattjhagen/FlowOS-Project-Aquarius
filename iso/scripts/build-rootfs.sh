@@ -44,7 +44,7 @@ apk add --no-cache --root "$ROOTFS" --initdb \
     gawk \
     iproute2 \
     iputils \
-    dhclient \
+    dhcpcd \
     wpa_supplicant \
     openssl \
     less \
