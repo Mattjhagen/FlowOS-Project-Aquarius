@@ -27,9 +27,7 @@ RUN apk add --no-cache \
     curl \
     wget \
     findutils \
-    coreutils \
-    librsvg \
-    font-dejavu
+    coreutils
 
 # Create build workspace
 RUN mkdir -p /build /output /src
@@ -37,8 +35,8 @@ RUN mkdir -p /build /output /src
 # Copy the entire FlowOS repo into the build context
 COPY . /src/
 
-# Generate GRUB splash PNG from SVG
-RUN rsvg-convert -w 1920 -h 1080 /src/iso/grub/splash.svg -o /build/splash.png
+# Copy pre-built splash PNG if present (optional — grub.cfg falls back gracefully)
+RUN [ -f /src/iso/grub/splash.png ] && cp /src/iso/grub/splash.png /build/splash.png || true
 
 # Make all scripts executable
 RUN chmod +x /src/iso/scripts/*.sh /src/iso/initramfs/init
