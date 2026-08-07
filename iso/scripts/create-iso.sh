@@ -50,22 +50,24 @@ mksquashfs /build/rootfs "$ISO_ROOT/flowos/rootfs.squashfs" \
     -e /build/rootfs/tmp
 echo "==> Squashfs: $(du -sh $ISO_ROOT/flowos/rootfs.squashfs | cut -f1)"
 
-# GRUB BIOS boot image
+# GRUB BIOS boot image (embed USB keyboard + search so it never drops to rescue)
 echo "==> Installing GRUB..."
 grub-mkimage \
     -O i386-pc \
     -o "$ISO_ROOT/boot/grub/core.img" \
     -p "/boot/grub" \
-    biosdisk iso9660 normal search search_fs_file linux echo \
-    gzio part_msdos part_gpt fat ext2 ls reboot halt
+    biosdisk iso9660 normal search search_fs_file search_fs_uuid search_label \
+    linux echo gzio part_msdos part_gpt fat ext2 ls reboot halt \
+    usb usb_keyboard uhci ohci ehci at_keyboard
 
 # GRUB EFI image
 grub-mkimage \
     -O x86_64-efi \
     -o "$ISO_ROOT/EFI/BOOT/BOOTX64.EFI" \
     -p "/boot/grub" \
-    iso9660 normal search search_fs_file linux echo \
-    gzio part_msdos part_gpt fat ext2 ls reboot halt
+    iso9660 normal search search_fs_file search_fs_uuid search_label \
+    linux echo gzio part_msdos part_gpt fat ext2 ls reboot halt \
+    usb usb_keyboard uhci ohci ehci at_keyboard
 
 # Create EFI boot image
 dd if=/dev/zero of="$ISO_ROOT/boot/grub/efi.img" bs=1M count=4
