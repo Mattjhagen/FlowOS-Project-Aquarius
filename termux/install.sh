@@ -149,7 +149,7 @@ for f in $FILES; do
         || fail "Failed to download $f"
 done
 
-PLUGINS="file_manager git_plugin web_browser notes code_runner system_monitor weather clipboard"
+PLUGINS="base file_manager git_plugin web_browser notes code_runner system_monitor weather clipboard"
 for p in $PLUGINS; do
     curl -fsSL "$REPO/plugins/${p}.py" -o "$FLOWOS_DIR/plugins/${p}.py" 2>/dev/null \
         && info "plugins/${p}.py" || true
