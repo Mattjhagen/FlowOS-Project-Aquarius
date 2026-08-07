@@ -100,7 +100,7 @@ step "Installing system packages..."
 case "$PLATFORM" in
     termux)
         pkg update -y -q 2>/dev/null || true
-        pkg install -y -q python python-pip python-psutil git curl 2>/dev/null || true
+        pkg install -y -q python python-pip python-psutil git curl rust 2>/dev/null || true
         ok "Termux packages ready"
         ;;
     macos)
