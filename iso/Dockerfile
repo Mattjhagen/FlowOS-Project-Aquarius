@@ -5,7 +5,8 @@
 #   docker build -f iso/Dockerfile -t flowos-builder .
 #   docker run --rm --privileged -v $(pwd)/dist:/output flowos-builder
 
-FROM alpine:3.21
+# Build for x86_64 target regardless of host (Apple Silicon runs Docker via Rosetta/emulation)
+FROM --platform=linux/amd64 alpine:3.21
 
 # Build tools + splash deps in one layer to minimise image size
 RUN apk add --no-cache \

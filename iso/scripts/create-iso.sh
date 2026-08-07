@@ -60,14 +60,20 @@ grub-mkimage \
     linux echo gzio part_msdos part_gpt fat ext2 ls reboot halt \
     usb usb_keyboard uhci ohci ehci at_keyboard
 
-# GRUB EFI image
+# GRUB EFI image — embed a bootstrap config so GRUB can find the ISO9660
+# partition before loading any modules from disk (fixes empty `ls` on UEFI boot)
+cat > /tmp/grub-efi-bootstrap.cfg << 'BOOTSTRAP'
+search --no-floppy --label --set=root FLOWOS
+set prefix=($root)/boot/grub
+configfile /boot/grub/grub.cfg
+BOOTSTRAP
+
 grub-mkimage \
     -O x86_64-efi \
     -o "$ISO_ROOT/EFI/BOOT/BOOTX64.EFI" \
-    -p "/boot/grub" \
+    -c /tmp/grub-efi-bootstrap.cfg \
     iso9660 normal search search_fs_file search_fs_uuid search_label \
-    linux echo gzio part_msdos part_gpt fat ext2 ls reboot halt \
-    usb usb_keyboard uhci ohci ehci at_keyboard
+    linux echo gzio part_msdos part_gpt fat ext2 ls reboot halt
 
 # Create EFI boot image
 dd if=/dev/zero of="$ISO_ROOT/boot/grub/efi.img" bs=1M count=4
