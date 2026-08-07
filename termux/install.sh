@@ -150,6 +150,7 @@ for f in $FILES; do
 done
 
 PLUGINS="base file_manager git_plugin web_browser notes code_runner system_monitor weather clipboard"
+touch "$FLOWOS_DIR/plugins/__init__.py"
 for p in $PLUGINS; do
     curl -fsSL "$REPO/plugins/${p}.py" -o "$FLOWOS_DIR/plugins/${p}.py" 2>/dev/null \
         && info "plugins/${p}.py" || true
@@ -180,7 +181,8 @@ fi
 step "Creating launcher..."
 cat > "$BIN" << LAUNCHER
 #!/bin/bash
-KEYFILE="\$HOME/.flowos/api_key"
+FLOWOS_DIR="\$HOME/.flowos"
+KEYFILE="\$FLOWOS_DIR/api_key"
 if [ -f "\$KEYFILE" ] && [ -s "\$KEYFILE" ]; then
     export ANTHROPIC_API_KEY=\$(cat "\$KEYFILE")
 fi
@@ -195,7 +197,8 @@ if [ -z "\$ANTHROPIC_API_KEY" ]; then
         export ANTHROPIC_API_KEY
     fi
 fi
-exec ${PYTHON} "\$HOME/.flowos/flowos.py" "\$@"
+cd "\$FLOWOS_DIR"
+exec ${PYTHON} "\$FLOWOS_DIR/flowos.py" "\$@"
 LAUNCHER
 
 chmod +x "$BIN"

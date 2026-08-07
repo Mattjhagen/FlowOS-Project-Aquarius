@@ -18,9 +18,22 @@ def load_session(session_id: str) -> list:
     return []
 
 
+def _serialize(obj):
+    """Convert Anthropic SDK objects (TextBlock, ToolUseBlock, etc.) to plain dicts."""
+    if hasattr(obj, '__dict__'):
+        return {k: _serialize(v) for k, v in obj.__dict__.items() if not k.startswith('_')}
+    if hasattr(obj, 'type'):
+        return {k: _serialize(v) for k, v in vars(obj).items() if not k.startswith('_')}
+    if isinstance(obj, list):
+        return [_serialize(i) for i in obj]
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    return obj
+
+
 def save_session(session_id: str, messages: list):
     path = get_session_path(session_id)
-    path.write_text(json.dumps(messages, indent=2))
+    path.write_text(json.dumps(_serialize(messages), indent=2))
 
 
 def list_sessions() -> list:
