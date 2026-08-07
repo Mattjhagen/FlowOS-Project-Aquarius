@@ -7,7 +7,7 @@
 
 FROM alpine:3.21
 
-# Build tools
+# Build tools + splash deps in one layer to minimise image size
 RUN apk add --no-cache \
     squashfs-tools \
     xorriso \
@@ -27,13 +27,12 @@ RUN apk add --no-cache \
     curl \
     wget \
     findutils \
-    coreutils
+    coreutils \
+    librsvg \
+    font-dejavu
 
 # Create build workspace
 RUN mkdir -p /build /output /src
-
-# Add librsvg + DejaVu fonts for splash PNG generation
-RUN apk add --no-cache librsvg font-dejavu
 
 # Copy the entire FlowOS repo into the build context
 COPY . /src/
