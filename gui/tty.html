@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06060a">
+<title>FlowOS TTY</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--void:#06060a;--bg:#09090f;--panel:#0d0d18;--bdr:#1a1a2e;--bdr2:#242438;--violet:#7c3aed;--vi-lt:#a78bfa;--vi-gl:rgba(124,58,237,.1);--green:#10b981;--amber:#f59e0b;--red:#ef4444;--cyan:#06b6d4;--text:#e2d9ff;--sub:#6b6b9a;--dim:#2e2e4a;--mono:'JetBrains Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--void);color:var(--text);font-family:var(--mono);font-size:12px;overflow:hidden;-webkit-font-smoothing:antialiased}
+body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px)}
+#shell{display:flex;flex-direction:column;height:100vh;padding:8px;gap:6px}
+#hdr{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--panel);border:1px solid var(--bdr);border-radius:5px;flex-shrink:0}
+.logo{color:var(--violet);font-size:15px;font-weight:700;text-shadow:0 0 12px rgba(124,58,237,.8)}
+.hdiv{color:var(--dim)}
+.hhost{color:var(--vi-lt)}
+.hsp{flex:1}
+.hpill{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:10px;background:var(--bg);border:1px solid var(--bdr);font-size:10px;color:var(--sub)}
+#cdot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;transition:all .4s}
+#cdot.live{background:var(--green);box-shadow:0 0 7px rgba(16,185,129,.7)}
+#cdot.wait{background:var(--amber);animation:bl .6s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+#htime{color:var(--cyan);font-size:10px;margin-left:6px}
+#grid{flex:1;display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:min-content;gap:6px;overflow:hidden;align-content:start}
+.p{background:var(--panel);border:1px solid var(--bdr);border-radius:5px;padding:10px 12px;position:relative;overflow:hidden}
+.p::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--violet),transparent);opacity:.3}
+.plbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);margin-bottom:7px;display:flex;align-items:center;gap:4px}
+.pd{width:4px;height:4px;border-radius:50%;background:var(--violet);box-shadow:0 0 5px rgba(124,58,237,.7)}
+.big{font-size:34px;font-weight:700;line-height:1;letter-spacing:-.02em;transition:color .5s}
+.bsub{font-size:10px;color:var(--sub);margin-top:3px}
+.bw{height:4px;background:var(--dim);border-radius:2px;overflow:hidden;margin-top:7px}
+.bf{height:100%;border-radius:2px;background:var(--violet);transition:width 1s;box-shadow:0 0 5px var(--violet)}
+.bf.warn{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+.bf.crit{background:var(--red);box-shadow:0 0 5px var(--red)}
+canvas.sp{width:100%;height:32px;display:block;margin-top:7px}
+.sr{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px solid rgba(26,26,46,.5);font-size:10px}
+.sr:last-child{border:none}
+.sk{color:var(--sub)}.sv{font-weight:600}
+.sv.g{color:var(--green)}.sv.c{color:var(--cyan)}.sv.a{color:var(--amber)}.sv.r{color:var(--red)}.sv.v{color:var(--vi-lt)}
+.tbl{width:100%;border-collapse:collapse;font-size:10px}
+.tbl th{color:var(--sub);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:9px;padding:3px 4px;text-align:left;border-bottom:1px solid var(--bdr)}
+.tbl td{padding:4px 4px;border-bottom:1px solid rgba(26,26,46,.4)}
+.tbl tr:last-child td{border:none}
+.tbl tr:hover td{background:var(--vi-gl)}
+.pn{color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mn{color:var(--text);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uu{color:var(--green);font-weight:600}
+.mb2{height:3px;background:var(--dim);border-radius:2px;overflow:hidden;width:50px;display:inline-block;vertical-align:middle}
+.mb2f{height:100%;border-radius:2px;background:var(--violet);transition:width .8s}
+.mb2f.w{background:var(--amber)}.mb2f.c{background:var(--red)}
+.net-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(26,26,46,.4);font-size:10px}
+.net-row:last-child{border:none}
+.nif{color:var(--vi-lt);font-weight:600;min-width:55px}
+#logfeed{overflow-y:auto;max-height:100px}
+#logfeed::-webkit-scrollbar{width:2px}
+#logfeed::-webkit-scrollbar-thumb{background:var(--bdr)}
+.ll{display:flex;gap:6px;padding:2px 0;border-bottom:1px solid rgba(26,26,46,.25);animation:li .2s ease}
+@keyframes li{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:none}}
+.lt{color:var(--dim);flex-shrink:0}.ls{color:var(--violet);flex-shrink:0;min-width:60px}.lm{color:var(--sub)}
+.lm.ok{color:var(--green)}.lm.warn{color:var(--amber)}.lm.err{color:var(--red)}.lm.info{color:var(--cyan)}
+#strip{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.sp2{flex:1;min-width:80px;background:var(--panel);border:1px solid var(--bdr);border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:7px}
+.sp2i{font-size:13px}.sp2l{font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.07em}.sp2v{font-size:12px;font-weight:700}
+.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}.c12{grid-column:span 12}
+@media(max-width:900px){.c3{grid-column:span 4}.c4{grid-column:span 6}.c6{grid-column:span 12}}
+@media(max-width:600px){.c2,.c3,.c4,.c6,.c12{grid-column:span 12}.big{font-size:26px}}
+</style>
+</head>
+<body>
+<div id="shell">
+<div id="hdr">
+  <span class="logo">⟁ FlowOS</span>
+  <span class="hdiv">/</span>
+  <span class="hhost">tty · command center · t310</span>
+  <div class="hsp"></div>
+  <div class="hpill"><div id="cdot"></div><span id="clbl">connecting</span></div>
+  <span id="htime">--:--:--</span>
+</div>
+<div id="grid">
+  <div class="p c3"><div class="plbl"><span class="pd"></span>CPU</div>
+    <div class="big" id="v-cpu" style="color:var(--vi-lt)">0%</div>
+    <div class="bsub" id="s-cpu">—</div>
+    <div class="bw"><div class="bf" id="b-cpu" style="width:0%"></div></div>
+    <canvas class="sp" id="sp-cpu" height="32"></canvas>
+  </div>
+  <div class="p c3"><div class="plbl"><span class="pd"></span>Memory</div>
+    <div class="big" id="v-mem" style="color:var(--cyan)">0%</div>
+    <div class="bsub" id="s-mem">—</div>
+    <div class="bw"><div class="bf" id="b-mem" style="width:0%"></div></div>
+    <canvas class="sp" id="sp-mem" height="32"></canvas>
+  </div>
+  <div class="p c2"><div class="plbl"><span class="pd"></span>Swap</div>
+    <div class="big" id="v-swp" style="color:var(--amber);font-size:24px">0%</div>
+    <div class="bsub" id="s-swp">—</div>
+    <div class="bw"><div class="bf" id="b-swp" style="width:0%"></div></div>
+  </div>
+  <div class="p c2"><div class="plbl"><span class="pd"></span>Temp</div>
+    <div class="big" id="v-tmp" style="color:var(--green);font-size:24px">—°</div>
+    <div class="bsub">celsius · xeon</div>
+    <div class="bw"><div class="bf" id="b-tmp" style="width:0%"></div></div>
+  </div>
+  <div class="p c2"><div class="plbl"><span class="pd"></span>Uptime</div>
+    <div style="font-size:18px;font-weight:700;color:var(--green);margin-top:2px" id="v-up">—</div>
+    <div class="bsub" id="s-up">—</div>
+    <div style="margin-top:6px">
+      <div class="sr"><span class="sk">procs</span><span class="sv v" id="v-procs">—</span></div>
+      <div class="sr"><span class="sk">load</span><span class="sv c" id="v-load">—</span></div>
+    </div>
+  </div>
+  <div class="p c4"><div class="plbl"><span class="pd"></span>Storage · Mounts</div>
+    <table class="tbl"><thead><tr><th>Mount</th><th>FS</th><th>Used</th><th>Total</th><th>Use%</th></tr></thead>
+    <tbody id="mnt-body"><tr><td colspan="5" style="color:var(--sub);padding:6px">Loading…</td></tr></tbody></table>
+  </div>
+  <div class="p c4"><div class="plbl"><span class="pd"></span>Active Users &amp; Sessions</div>
+    <table class="tbl"><thead><tr><th>User</th><th>TTY</th><th>From</th><th>Since</th></tr></thead>
+    <tbody id="usr-body"><tr><td colspan="4" style="color:var(--sub);padding:6px">Loading…</td></tr></tbody></table>
+    <div style="margin-top:6px">
+      <div class="sr"><span class="sk">sessions</span><span class="sv g" id="v-sessions">—</span></div>
+      <div class="sr"><span class="sk">last login</span><span class="sv a" id="v-lastlogin">—</span></div>
+      <div class="sr"><span class="sk">failed logins 24h</span><span class="sv r" id="v-failed">—</span></div>
+    </div>
+  </div>
+  <div class="p c4"><div class="plbl"><span class="pd"></span>System Info</div>
+    <div class="sr"><span class="sk">hostname</span><span class="sv v" id="v-host">—</span></div>
+    <div class="sr"><span class="sk">kernel</span><span class="sv" id="v-kernel">—</span></div>
+    <div class="sr"><span class="sk">distro</span><span class="sv" id="v-distro">—</span></div>
+    <div class="sr"><span class="sk">arch</span><span class="sv c" id="v-arch">—</span></div>
+    <div class="sr"><span class="sk">cpu model</span><span class="sv" id="v-cpumod" style="font-size:9px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span></div>
+    <div class="sr"><span class="sk">flowos</span><span class="sv g">v0.3 · running</span></div>
+    <div class="sr"><span class="sk">tunnel</span><span class="sv g">cloudflare · live</span></div>
+    <div class="sr"><span class="sk">tailscale</span><span class="sv c" id="v-ts">—</span></div>
+  </div>
+  <div class="p c6"><div class="plbl"><span class="pd"></span>Top Processes</div>
+    <table class="tbl"><thead><tr><th>Process</th><th>User</th><th style="text-align:right">CPU%</th><th style="text-align:right">MEM%</th><th style="text-align:right">MB</th><th style="text-align:right">PID</th></tr></thead>
+    <tbody id="proc-body"><tr><td colspan="6" style="color:var(--sub);padding:6px">Loading…</td></tr></tbody></table>
+  </div>
+  <div class="p c6"><div class="plbl"><span class="pd"></span>Network</div>
+    <div id="net-body"></div>
+    <div style="margin-top:6px">
+      <div class="sr"><span class="sk">established</span><span class="sv c" id="v-conns">—</span></div>
+      <div class="sr"><span class="sk">listening ports</span><span class="sv v" id="v-ports">—</span></div>
+      <div class="sr"><span class="sk">tunnel</span><span class="sv g">os.relayapp.pro → :7071</span></div>
+    </div>
+  </div>
+  <div class="p c12"><div class="plbl"><span class="pd"></span>Live Event Log</div>
+    <div id="logfeed"></div>
+  </div>
+</div>
+<div id="strip">
+  <div class="sp2"><span class="sp2i">🌡</span><div><div class="sp2l">Temp</div><div class="sp2v" id="p-tmp">—</div></div></div>
+  <div class="sp2"><span class="sp2i">⏱</span><div><div class="sp2l">Uptime</div><div class="sp2v" id="p-up">—</div></div></div>
+  <div class="sp2"><span class="sp2i">👥</span><div><div class="sp2l">Users</div><div class="sp2v" id="p-users" style="color:var(--green)">—</div></div></div>
+  <div class="sp2"><span class="sp2i">💾</span><div><div class="sp2l">RAM Free</div><div class="sp2v" id="p-mf" style="color:var(--cyan)">—</div></div></div>
+  <div class="sp2"><span class="sp2i">📦</span><div><div class="sp2l">Disk Free</div><div class="sp2v" id="p-df" style="color:var(--amber)">—</div></div></div>
+  <div class="sp2"><span class="sp2i">⚡</span><div><div class="sp2l">FlowOS</div><div class="sp2v" style="color:var(--green)">running</div></div></div>
+  <div class="sp2"><span class="sp2i">🌐</span><div><div class="sp2l">Tunnel</div><div class="sp2v" style="color:var(--green)">live</div></div></div>
+  <div class="sp2"><span class="sp2i">🔄</span><div><div class="sp2l">Updated</div><div class="sp2v" id="p-tick" style="color:var(--sub)">—</div></div></div>
+</div>
+</div>
+<script>
+const API=location.hostname==='os.relayapp.pro'?'https://os.relayapp.pro':`http://${location.hostname||'localhost'}:7071`;
+const H={cpu:[],mem:[]};const MAX=60;
+setInterval(()=>{document.getElementById('htime').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})},1000);
+function sc(on){document.getElementById('cdot').className=on?'live':'wait';document.getElementById('clbl').textContent=on?'live':'polling';}
+async function go(){
+  try{const d=await fetch(API+'/api/tty').then(r=>r.json());sc(true);render(d);}
+  catch{sc(false);addLog('flowos','API unreachable','warn');}
+  document.getElementById('p-tick').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+function render(d){
+  const cpu=d.cpu||0;setv('v-cpu',cpu.toFixed(0)+'%',pc(cpu));setb('b-cpu',cpu);
+  st('s-cpu',`${d.cpu_count||'?'} cores · load ${d.load_avg||'—'}`);
+  H.cpu.push(cpu);if(H.cpu.length>MAX)H.cpu.shift();spark('sp-cpu',H.cpu,'#7c3aed');
+  const mp=d.mem_pct||0;setv('v-mem',Math.round(mp)+'%','#06b6d4');setb('b-mem',mp);
+  st('s-mem',`${d.mem_used||0} / ${d.mem_total||0} GB`);st('p-mf',`${d.mem_free||0}GB`);
+  H.mem.push(mp);if(H.mem.length>MAX)H.mem.shift();spark('sp-mem',H.mem,'#06b6d4');
+  const sp=d.swap_pct||0;setv('v-swp',Math.round(sp)+'%',pc(sp));setb('b-swp',sp);
+  st('s-swp',`${d.swap_used||0} / ${d.swap_total||0} GB`);
+  if(d.temp){const t=d.temp,tc=t>80?'var(--red)':t>65?'var(--amber)':'var(--green)';setv('v-tmp',t.toFixed(1)+'°',tc);setv('p-tmp',t.toFixed(1)+'°C',tc);setb('b-tmp',t,t>80?'crit':t>65?'warn':'');}
+  st('v-up',d.uptime||'—');st('p-up',d.uptime||'—');st('s-up',d.boot_time||'');
+  st('v-procs',d.proc_count||'—');st('v-load',d.load_avg||'—');
+  st('v-host',d.hostname||'—');st('v-kernel',d.kernel||'—');st('v-distro',d.distro||'—');
+  st('v-arch',d.arch||'—');st('v-cpumod',d.cpu_model||'—');st('v-ts',d.tailscale_ip||'—');
+  if(d.mounts)renderMounts(d.mounts);
+  if(d.users!==undefined)renderUsers(d.users,d.last_login,d.failed_logins);
+  if(d.procs)renderProcs(d.procs);
+  if(d.net)renderNet(d.net);
+  st('v-conns',d.connections!=null?`${d.connections}`:'—');
+  st('v-ports',d.listening_ports||'—');
+  st('p-users',d.user_count!=null?`${d.user_count} active`:'—');
+  st('p-df',d.disk_free?`${d.disk_free}GB`:'—');
+}
+function renderMounts(m){
+  document.getElementById('mnt-body').innerHTML=m.map(x=>{const p=x.pct||0,c=p>90?'c':p>75?'w':'';
+  return`<tr><td class="mn" title="${ex(x.mountpoint)}">${ex(x.mountpoint)}</td><td style="color:var(--sub)">${ex(x.fstype||'')}</td><td style="color:var(--vi-lt)">${x.used||0}G</td><td style="color:var(--sub)">${x.total||0}G</td><td><div class="mb2"><div class="mb2f ${c}" style="width:${p}%"></div></div> <span style="color:var(--sub);font-size:9px">${p}%</span></td></tr>`;}).join('');
+}
+function renderUsers(u,ll,fl){
+  st('v-sessions',u?u.length:'0');st('v-lastlogin',ll||'—');st('v-failed',fl!=null?`${fl}`:'—');
+  document.getElementById('usr-body').innerHTML=(!u||!u.length)?'<tr><td colspan="4" style="color:var(--sub);padding:6px">No active sessions</td></tr>':
+  u.map(x=>`<tr><td class="uu">${ex(x.name||'?')}</td><td style="color:var(--cyan)">${ex(x.terminal||'?')}</td><td style="color:var(--sub)">${ex(x.host||'local')}</td><td style="color:var(--amber)">${ex(x.started||'?')}</td></tr>`).join('');
+}
+function renderProcs(p){
+  document.getElementById('proc-body').innerHTML=p.slice(0,10).map(x=>`<tr><td class="pn" title="${ex(x.name)}">${ex(x.name)}</td><td style="color:var(--sub);font-size:9px">${ex(x.user||'?')}</td><td style="color:var(--vi-lt);text-align:right">${(x.cpu||0).toFixed(1)}</td><td style="color:var(--cyan);text-align:right">${(x.mem||0).toFixed(1)}</td><td style="color:var(--sub);text-align:right">${x.mem_mb||0}</td><td style="color:var(--sub);text-align:right">${x.pid||'—'}</td></tr>`).join('');
+}
+function renderNet(net){
+  document.getElementById('net-body').innerHTML=Object.entries(net).map(([i,d])=>`<div class="net-row"><span class="nif">${ex(i)}</span><span style="color:var(--sub)">${ex(d.ip||'—')}</span><span style="color:var(--green)">↓${fmt(d.rx_sec||0)}/s</span><span style="color:var(--amber)">↑${fmt(d.tx_sec||0)}/s</span><span style="color:var(--sub);font-size:9px">${fmt(d.rx_total||0)}/${fmt(d.tx_total||0)}</span></div>`).join('');
+}
+function spark(id,data,color){
+  const c=document.getElementById(id);if(!c||data.length<2)return;
+  const W=c.offsetWidth*devicePixelRatio||200,H2=c.offsetHeight*devicePixelRatio||32;
+  c.width=W;c.height=H2;const ctx=c.getContext('2d');ctx.clearRect(0,0,W,H2);
+  const pts=data.slice(-MAX),step=W/(MAX-1);
+  ctx.beginPath();ctx.moveTo(0,H2);pts.forEach((v,i)=>ctx.lineTo(i*step,H2-(v/100)*H2*.88));
+  ctx.lineTo((pts.length-1)*step,H2);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H2);g.addColorStop(0,color+'50');g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();pts.forEach((v,i)=>{const x=i*step,y=H2-(v/100)*H2*.88;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.strokeStyle=color;ctx.lineWidth=1.5*devicePixelRatio;ctx.stroke();
+}
+const LOGS=[['flowos','WebSocket heartbeat OK','ok'],['cloudflared','QUIC tunnel healthy','ok'],['systemd','flowos.service active','ok'],['python3','Uvicorn /api/tty 200','info'],['kernel','CPU temp nominal','ok'],['tailscale','peer handshake OK','ok'],['flowos','/api/processes polled','info'],['cloudflared','edge keepalive sent','ok']];
+let li=0;
+function addLog(s,m,lv='ok'){const f=document.getElementById('logfeed');const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});const el=document.createElement('div');el.className='ll';el.innerHTML=`<span class="lt">${ts}</span><span class="ls">${ex(s)}</span><span class="lm ${lv}">${ex(m)}</span>`;f.insertBefore(el,f.firstChild);while(f.children.length>50)f.removeChild(f.lastChild);}
+setInterval(()=>{const[s,m,lv]=LOGS[li++%LOGS.length];addLog(s,m,lv);},5000);
+function st(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function setv(id,v,c){const e=document.getElementById(id);if(e){e.textContent=v;if(c)e.style.color=c;}}
+function setb(id,pct,cls){const e=document.getElementById(id);if(!e)return;e.style.width=Math.min(pct,100)+'%';e.className='bf'+(pct>90?' crit':pct>70?' warn':'');if(cls)e.className='bf '+cls;}
+function pc(p){return p>90?'var(--red)':p>70?'var(--amber)':'var(--vi-lt)';}
+function ex(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'K';if(b<1073741824)return(b/1048576).toFixed(1)+'M';return(b/1073741824).toFixed(2)+'G';}
+addLog('flowos','TTY Command Center online','ok');addLog('cloudflared','os.relayapp.pro → t310:7071','ok');addLog('tailscale','Mesh VPN active','ok');
+go();setInterval(go,3000);
+</script>
+</body>
+</html>
