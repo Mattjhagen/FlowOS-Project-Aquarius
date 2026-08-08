@@ -1,11 +1,13 @@
 import os, sys, pathlib, json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 GUI_DIR = pathlib.Path(__file__).parent
 
 @app.get("/", response_class=HTMLResponse)
@@ -138,6 +140,6 @@ async def ws_endpoint(ws: WebSocket):
         if ws in active: active.remove(ws)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("FLOWOS_PORT", 7071))
-    print(f"\n  FlowOS -> http://localhost:{port}\n")
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+    port = int(os.environ.get("PORT", os.environ.get("FLOWOS_PORT", 7071)))
+    print(f"\n  FlowOS -> port {port}\n")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
