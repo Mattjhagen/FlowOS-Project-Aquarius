@@ -140,6 +140,6 @@ async def ws_endpoint(ws: WebSocket):
         if ws in active: active.remove(ws)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", os.environ.get("FLOWOS_PORT", 7071)))
+    port = int(os.environ.get("PORT", 8080))
     print(f"\n  FlowOS -> port {port}\n")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
