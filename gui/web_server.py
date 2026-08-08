@@ -1,12 +1,11 @@
-import os, sys, pathlib
+import os, sys, pathlib, json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 import uvicorn
 
 ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-
-app = FastAPI(title="FlowOS Web GUI")
+app = FastAPI()
 GUI_DIR = pathlib.Path(__file__).parent
 
 @app.get("/", response_class=HTMLResponse)
@@ -18,19 +17,42 @@ async def index():
 async def system_stats():
     try:
         import psutil
-        m = psutil.virtual_memory()
-        d = psutil.disk_usage("/")
-        return {"cpu": psutil.cpu_percent(interval=0.1),
-                "mem_used": round(m.used/1e9,1), "mem_total": round(m.total/1e9,1), "mem_pct": m.percent,
-                "disk_used": round(d.used/1e9,1), "disk_total": round(d.total/1e9,1), "disk_pct": d.percent}
+        try:
+            cpu = psutil.cpu_percent(interval=0.1)
+        except:
+            cpu = 0.0
+        try:
+            m = psutil.virtual_memory()
+            mu, mt, mp = round(m.used/1e9,1), round(m.total/1e9,1), m.percent
+        except:
+            mu, mt, mp = 0, 0, 0
+        try:
+            d = psutil.disk_usage("/data")
+            du, dt, dp = round(d.used/1e9,1), round(d.total/1e9,1), d.percent
+        except:
+            du, dt, dp = 0, 0, 0
+        return {"cpu": cpu, "mem_used": mu, "mem_total": mt, "mem_pct": mp,
+                "disk_used": du, "disk_total": dt, "disk_pct": dp}
     except Exception as e:
         return {"error": str(e)}
+
+def _cfg():
+    p = pathlib.Path.home() / ".flowos" / "plugins.json"
+    if p.exists():
+        try: return json.load(open(p))
+        except: pass
+    return []
+
+def _save_cfg(data):
+    p = pathlib.Path.home() / ".flowos" / "plugins.json"
+    p.parent.mkdir(exist_ok=True)
+    json.dump(data, open(p, "w"))
 
 @app.get("/api/plugins")
 async def list_plugins():
     try:
-        from plugin_manager import AVAILABLE_PLUGINS, load_enabled_plugins
-        enabled = {p.name for p in load_enabled_plugins()}
+        from plugin_manager import AVAILABLE_PLUGINS
+        enabled = set(_cfg())
         return [{"name": n, "description": desc, "enabled": n in enabled}
                 for n, (_, _, desc) in AVAILABLE_PLUGINS.items()]
     except Exception as e:
@@ -39,14 +61,18 @@ async def list_plugins():
 @app.post("/api/plugins/{name}/enable")
 async def enable_plugin(name: str):
     try:
-        from plugin_manager import enable_plugin as _e; _e(name); return {"ok": True}
+        pl = _cfg()
+        if name not in pl: pl.append(name)
+        _save_cfg(pl)
+        return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
 @app.post("/api/plugins/{name}/disable")
 async def disable_plugin(name: str):
     try:
-        from plugin_manager import disable_plugin as _d; _d(name); return {"ok": True}
+        _save_cfg([x for x in _cfg() if x != name])
+        return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
@@ -57,7 +83,10 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     active.append(ws)
     try:
-        key = os.environ.get("ANTHROPIC_API_KEY") or _key_file()
+        key = os.environ.get("ANTHROPIC_API_KEY")
+        if not key:
+            kf = pathlib.Path.home() / ".flowos" / "api_key"
+            key = kf.read_text().strip() if kf.exists() else None
         if not key:
             await ws.send_json({"type": "error", "text": "No API key. Run: echo sk-ant-... > ~/.flowos/api_key"})
             return
@@ -70,18 +99,16 @@ async def ws_endpoint(ws: WebSocket):
 
         while True:
             data = await ws.receive_json()
-            if data.get("type") != "message":
-                continue
+            if data.get("type") != "message": continue
             text = data.get("text", "").strip()
-            if not text:
-                continue
+            if not text: continue
             messages.append({"role": "user", "content": text})
 
             while True:
                 resp = client.messages.create(
                     model="claude-sonnet-4-6",
                     max_tokens=4096,
-                    system="You are FlowOS, an AI that IS the operating system. You have real system access via tools. Be direct and concise.",
+                    system="You are FlowOS, an AI OS. You have real system access. Be direct and concise.",
                     tools=TOOL_DEFINITIONS,
                     messages=messages,
                 )
@@ -105,22 +132,12 @@ async def ws_endpoint(ws: WebSocket):
     except WebSocketDisconnect:
         pass
     except Exception as e:
-        try:
-            await ws.send_json({"type": "error", "text": str(e)})
-        except:
-            pass
+        try: await ws.send_json({"type": "error", "text": str(e)})
+        except: pass
     finally:
-        if ws in active:
-            active.remove(ws)
-
-def _key_file():
-    p = pathlib.Path.home() / ".flowos" / "api_key"
-    return p.read_text().strip() if p.exists() else None
-
-def main():
-    port = int(os.environ.get("FLOWOS_PORT", 7071))
-    print(f"\n  FlowOS Web GUI -> http://localhost:{port}\n")
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+        if ws in active: active.remove(ws)
 
 if __name__ == "__main__":
-    main()
+    port = int(os.environ.get("FLOWOS_PORT", 7071))
+    print(f"\n  FlowOS -> http://localhost:{port}\n")
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
