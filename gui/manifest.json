@@ -1,0 +1,36 @@
+{
+  "name": "FlowOS",
+  "short_name": "FlowOS",
+  "description": "AI-powered OS. Real system access. Natural language.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06060a",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%237c3aed'/><text y='.85em' font-size='380' text-anchor='middle' x='256'>⟁</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chat",
+      "url": "/?tab=chat",
+      "description": "Open AI chat"
+    },
+    {
+      "name": "Terminal",
+      "url": "/?tab=terminal",
+      "description": "Open terminal"
+    },
+    {
+      "name": "Files",
+      "url": "/?tab=files",
+      "description": "Browse files"
+    }
+  ],
+  "categories": ["productivity", "utilities", "developer"]
+}
