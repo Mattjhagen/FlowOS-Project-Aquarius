@@ -467,28 +467,129 @@ footer {
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
       <a href="https://github.com/Mattjhagen/FlowOS-Project-Aquarius/releases/latest" class="btn-primary" style="font-size:16px;height:52px;padding:0 32px">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Latest Release
-      </a>
-      <a href="https://github.com/Mattjhagen/FlowOS-Project-Aquarius#build-a-bootable-iso" class="btn-secondary" style="font-size:15px;height:52px">
-        Build from source
-      </a>
+        
+    <!-- ONE-LINER -->
+    <div style="background:#0a0a12;border:1px solid #2e2e50;border-radius:14px;padding:20px 24px;margin-bottom:32px;font-family:monospace;max-width:680px;margin-left:auto;margin-right:auto">
+      <div style="font-size:11px;color:#5a5a80;margin-bottom:10px;letter-spacing:.06em;text-transform:uppercase">One-line install — macOS · Linux · Termux · Android</div>
+      <div style="display:flex;align-items:center;gap:12px;background:#06060a;border-radius:8px;padding:14px 16px;border:1px solid #242438;flex-wrap:wrap;gap:8px">
+        <span style="color:#a78bfa;flex:1;font-size:13px;word-break:break-all">curl -fsSL https://flowos.wiki/install.sh | bash</span>
+        <button onclick="navigator.clipboard.writeText('curl -fsSL https://flowos.wiki/install.sh | bash').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)})"
+                style="background:#1c1c30;border:1px solid #2e2e50;color:#9999bb;padding:6px 14px;border-radius:6px;font-family:monospace;font-size:12px;cursor:pointer;white-space:nowrap">Copy</button>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#5a5a80">Or run in the browser: <a href="https://os.relayapp.pro" style="color:#a78bfa;text-decoration:none">os.relayapp.pro →</a></div>
     </div>
-    <div class="dl-version">flowos-desktop · github.com/Mattjhagen/FlowOS-Project-Aquarius</div>
-    <div class="dl-platforms">
-      <div class="dl-platform"><span class="dl-platform-icon">💿</span>Etcher</div>
-      <div class="dl-platform"><span class="dl-platform-icon">🐧</span>dd</div>
-      <div class="dl-platform"><span class="dl-platform-icon">🪟</span>Rufus</div>
-    </div>
-    <p class="dl-note">
-      Runs alongside any existing OS — boots from USB, leaves your hard drive untouched.<br>
-      Docs at <a href="https://flowos.wiki">flowos.wiki</a> · Built with <a href="https://anthropic.com" target="_blank">Claude</a>
-    </p>
-  </div>
-</div>
 
-<!-- FOOTER -->
-<footer>
-  <div class="footer-logo">
+    <!-- DOWNLOAD BUTTONS -->
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:32px">
+      <a href="https://github.com/Mattjhagen/FlowOS-Project-Aquarius/releases/latest"
+         style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:10px;background:#38bdf8;color:#000;font-weight:700;font-size:15px;text-decoration:none">⬇ Latest Release</a>
+      <a href="https://github.com/Mattjhagen/FlowOS-Project-Aquarius#build-a-bootable-iso"
+         style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:10px;background:transparent;color:#9999bb;font-weight:600;font-size:15px;text-decoration:none;border:1px solid #2e2e50">Build from source</a>
+    </div>
+
+    <p style="color:#5a5a80;font-size:13px;font-family:monospace;margin-bottom:40px">flowos-desktop · github.com/Mattjhagen/FlowOS-Project-Aquarius</p>
+
+    <!-- FLASH METHOD CARDS -->
+    <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:760px;margin:0 auto 40px">
+      <a href="https://etcher.balena.io" target="_blank"
+         style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 20px;border-radius:14px;background:#111120;border:1px solid #242438;text-decoration:none;min-width:160px;flex:1;cursor:pointer">
+        <span style="font-size:36px">💿</span>
+        <div style="color:#e2d9ff;font-weight:700;font-size:15px">Etcher</div>
+        <div style="color:#5a5a80;font-size:12px;text-align:center">Mac · Windows · Linux</div>
+        <span style="color:#38bdf8;font-size:12px">etcher.balena.io →</span>
+      </a>
+      <a href="#dd-guide"
+         style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 20px;border-radius:14px;background:#111120;border:1px solid #242438;text-decoration:none;min-width:160px;flex:1">
+        <span style="font-size:36px">🐧</span>
+        <div style="color:#e2d9ff;font-weight:700;font-size:15px">dd</div>
+        <div style="color:#5a5a80;font-size:12px;text-align:center">Linux · macOS</div>
+        <span style="color:#a78bfa;font-size:12px">See guide below →</span>
+      </a>
+      <a href="https://rufus.ie" target="_blank"
+         style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 20px;border-radius:14px;background:#111120;border:1px solid #242438;text-decoration:none;min-width:160px;flex:1">
+        <span style="font-size:36px">🪟</span>
+        <div style="color:#e2d9ff;font-weight:700;font-size:15px">Rufus</div>
+        <div style="color:#5a5a80;font-size:12px;text-align:center">Windows only</div>
+        <span style="color:#f59e0b;font-size:12px">rufus.ie →</span>
+      </a>
+    </div>
+
+    <p style="color:#5a5a80;font-size:13px;margin-bottom:8px">Runs alongside any existing OS — boots from USB, leaves your hard drive untouched.</p>
+    <p style="color:#5a5a80;font-size:13px">Docs at <a href="https://flowos.wiki" style="color:#38bdf8;text-decoration:none">flowos.wiki</a> · Built with <a href="https://anthropic.com" style="color:#38bdf8;text-decoration:none">Claude</a></p>
+
+    <!-- DD GUIDE -->
+    <div id="dd-guide" style="margin-top:72px;text-align:left;max-width:680px;margin-left:auto;margin-right:auto">
+      <h2 style="color:#e2d9ff;font-size:26px;font-weight:700;margin-bottom:8px">Using <code style="color:#a78bfa;background:#111120;padding:2px 8px;border-radius:6px">dd</code> to flash FlowOS</h2>
+      <p style="color:#5a5a80;font-size:14px;margin-bottom:32px">The command-line method for Linux and macOS. No GUI needed.</p>
+
+      <div style="background:#1a0808;border:1px solid #7f1d1d;border-radius:10px;padding:16px 20px;margin-bottom:32px;display:flex;gap:12px">
+        <span style="font-size:20px;flex-shrink:0">⚠️</span>
+        <div>
+          <div style="color:#fca5a5;font-weight:600;margin-bottom:4px">Double-check your device name</div>
+          <div style="color:#9b6b6b;font-size:13px">Writing to the wrong disk overwrites your data. Always verify with <code style="color:#fca5a5">lsblk</code> (Linux) or <code style="color:#fca5a5">diskutil list</code> (Mac) first.</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <div style="color:#38bdf8;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Step 1 — Find your USB drive</div>
+        <div style="background:#06060a;border:1px solid #242438;border-radius:10px;padding:16px 20px;font-family:monospace;font-size:13px">
+          <div style="color:#5a5a80;font-size:11px;margin-bottom:6px"># Linux</div>
+          <div style="color:#a78bfa;margin-bottom:14px">lsblk</div>
+          <div style="color:#5a5a80;font-size:11px;margin-bottom:6px"># macOS</div>
+          <div style="color:#a78bfa">diskutil list</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <div style="color:#a78bfa;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Step 2a — Flash on Linux</div>
+        <div style="background:#06060a;border:1px solid #242438;border-radius:10px;padding:16px 20px;font-family:monospace;font-size:13px;position:relative">
+          <div style="color:#5a5a80;font-size:11px;margin-bottom:6px"># Replace sdX with your USB device (e.g. sdb — NOT sdb1)</div>
+          <div style="color:#e2d9ff">sudo dd if=flowos.iso of=/dev/sdX bs=4M status=progress &amp;&amp; sync</div>
+          <button onclick="navigator.clipboard.writeText('sudo dd if=flowos.iso of=/dev/sdX bs=4M status=progress && sync')"
+                  style="position:absolute;top:10px;right:10px;background:#1c1c30;border:1px solid #2e2e50;color:#9999bb;padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:monospace">Copy</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <div style="color:#f59e0b;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Step 2b — Flash on macOS</div>
+        <div style="background:#06060a;border:1px solid #242438;border-radius:10px;padding:16px 20px;font-family:monospace;font-size:13px;position:relative">
+          <div style="color:#5a5a80;font-size:11px;margin-bottom:6px"># Replace diskN with your disk number (e.g. disk2)</div>
+          <div style="color:#e2d9ff;margin-bottom:6px">diskutil unmountDisk /dev/diskN</div>
+          <div style="color:#e2d9ff">sudo dd if=flowos.iso of=/dev/rdiskN bs=4m</div>
+          <button onclick="navigator.clipboard.writeText('diskutil unmountDisk /dev/diskN
+sudo dd if=flowos.iso of=/dev/rdiskN bs=4m')"
+                  style="position:absolute;top:10px;right:10px;background:#1c1c30;border:1px solid #2e2e50;color:#9999bb;padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:monospace">Copy</button>
+        </div>
+        <p style="color:#5a5a80;font-size:12px;margin-top:8px">Tip: <code style="color:#e2d9ff">rdisk</code> (raw disk) is faster than <code style="color:#e2d9ff">disk</code> on macOS.</p>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <div style="color:#10b981;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Step 3 — Boot from USB</div>
+        <div style="background:#06060a;border:1px solid #242438;border-radius:10px;padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px"><span style="color:#10b981;font-family:monospace;font-weight:700;flex-shrink:0">1.</span><span style="color:#9999bb;font-size:14px">Restart and hold the boot menu key (see table below)</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#10b981;font-family:monospace;font-weight:700;flex-shrink:0">2.</span><span style="color:#9999bb;font-size:14px">Select your USB drive</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#10b981;font-family:monospace;font-weight:700;flex-shrink:0">3.</span><span style="color:#9999bb;font-size:14px">GRUB loads → select <strong style="color:#e2d9ff">FlowOS Desktop</strong></span></div>
+          <div style="display:flex;gap:12px"><span style="color:#10b981;font-family:monospace;font-weight:700;flex-shrink:0">4.</span><span style="color:#9999bb;font-size:14px">Enter your <a href="https://console.anthropic.com" style="color:#38bdf8;text-decoration:none">Anthropic API key</a> on first boot</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#10b981;font-family:monospace;font-weight:700;flex-shrink:0">5.</span><span style="color:#9999bb;font-size:14px">FlowOS CLI launches ⟁</span></div>
+        </div>
+      </div>
+
+      <div style="background:#0d0d18;border:1px solid #242438;border-radius:10px;padding:16px 20px">
+        <div style="color:#5a5a80;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">Common Boot Menu Keys</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;font-family:monospace;font-size:13px">
+          <div><span style="color:#5a5a80">Dell </span><span style="color:#e2d9ff">F12</span></div>
+          <div><span style="color:#5a5a80">HP </span><span style="color:#e2d9ff">F9 / Esc</span></div>
+          <div><span style="color:#5a5a80">Lenovo </span><span style="color:#e2d9ff">F12 / F11</span></div>
+          <div><span style="color:#5a5a80">ASUS </span><span style="color:#e2d9ff">F8 / Esc</span></div>
+          <div><span style="color:#5a5a80">Acer </span><span style="color:#e2d9ff">F12</span></div>
+          <div><span style="color:#5a5a80">MSI </span><span style="color:#e2d9ff">F11</span></div>
+          <div><span style="color:#5a5a80">Gigabyte </span><span style="color:#e2d9ff">F12</span></div>
+          <div><span style="color:#5a5a80">Mac </span><span style="color:#e2d9ff">Hold ⌥ Option</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- /DD GUIDE -->
+
     <div class="nav-mark">F</div>
     <span style="font-size:14px;font-weight:600;color:var(--text)">Project Aquarius</span>
   </div>
